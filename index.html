@@ -6,28 +6,85 @@
 <title>AlergoPlan | Planer posiłków</title>
 <style>
 :root{--bg:#f4f7f5;--card:#fff;--text:#172b23;--muted:#718078;--green:#16794b;--green2:#e5f7ec;--border:#e3ebe5;--orange:#fff4df;--red:#bd4242;--shadow:0 10px 35px rgba(20,55,36,.055);--radius:20px}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 5% 0%,#9ee0b72e,transparent 32%),var(--bg);color:var(--text);font:15px/1.65 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-header{padding:42px 20px;background:linear-gradient(125deg,#102e21,#18734a);color:white}header .inner,main{max-width:1120px;margin:auto}header h1{margin:0;font-size:clamp(32px,5vw,48px);letter-spacing:-1.5px}header p{margin:5px 0 0;color:#d0e9d9}main{padding:28px 18px 55px}section{margin-bottom:20px;padding:25px;background:#ffffffef;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-h2{margin:0;font-size:22px;line-height:1.4}h3{margin:0 0 12px}.section-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}.step{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:13px;background:var(--green2);color:var(--green);font-weight:850}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:15px}.field{min-width:0}label{display:block;margin-bottom:6px;font-size:13px;font-weight:750}
-input,select,textarea{width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid #dce6de;border-radius:11px;background:#fbfdfb;color:var(--text);font:inherit;font-size:14px}input:focus,select:focus,textarea:focus{outline:2px solid #8dd3a6;border-color:var(--green)}
-button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-radius:11px;background:linear-gradient(135deg,#208b57,#146d43);color:white;font:inherit;font-size:13px;font-weight:800;cursor:pointer}button:hover{filter:brightness(1.07)}button.secondary{background:#edf8f0;color:#17683f;border-color:#d9eee0}button.danger{background:#fff0f0;color:#ad3030;border-color:#f3d8d8}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}
-.muted,small{color:var(--muted);font-size:12px}.notice,.success{margin:12px 0;padding:13px 15px;border-radius:11px;font-size:13px}.notice{background:var(--orange);color:#80551b;border:1px solid #f3e3c2}.success{background:#eaf8ee;color:#17683f;border:1px solid #d0ecd9}
-.person,.day{margin-bottom:15px;padding:19px;border:1px solid var(--border);border-radius:16px;background:#fff}.person{border-left:4px solid #39a86b}.person-title{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.macro-grid{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:10px;margin-top:14px;padding:13px;background:#f1f7f2;border-radius:12px}
-.checks,.mode{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0}.check,.mode label{display:flex;align-items:center;gap:7px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fbfdfb;cursor:pointer}.check input,.mode input{width:auto;min-height:auto;accent-color:var(--green)}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:12px}.stat{padding:15px;background:linear-gradient(145deg,#f1faf3,#e7f5eb);border:1px solid #deeee2;border-radius:13px}.stat strong{display:block;color:#176e43;font-size:25px}.stat span{font-size:12px;color:#64776a}
-.meal{margin:12px 0;padding:17px;border:1px solid #e5ece6;border-radius:14px;background:#fbfdfb}.meal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.meal h4{margin:0;font-size:17px}.pills{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.pill{padding:4px 8px;border:1px solid #dceee1;border-radius:7px;background:#edf8f0;color:#246c43;font-size:11px;font-weight:750}.ingredient-list{padding-left:20px;font-size:13px}.shopping-item{display:flex;align-items:center;gap:10px;margin-bottom:7px;padding:11px;border:1px solid var(--border);border-radius:10px;background:#fbfdfb}.shopping-item input{width:17px;min-height:17px}.shopping-item span{font-size:14px}.hidden{display:none!important}.contact-info{padding:14px;background:#f0f8f2;border:1px solid #dceee1;border-radius:12px}.contact-form{display:grid;gap:13px;max-width:720px}.contact-form textarea{min-height:120px;resize:vertical}footer{text-align:center;padding:22px;color:#87948b;font-size:12px}
-@media(max-width:700px){header{padding:30px 18px}main{padding:18px 10px 35px}section{padding:17px}.macro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.meal-head{flex-direction:column}.actions button{flex:1 1 100%}}
-@media print{header{background:white;color:#172b23;padding:12px 0}header p,#setup,#peopleSection,#preferences,#generateSection,.actions,.no-print,footer,#contactSection{display:none!important}main{padding:0}section,.day,.meal{box-shadow:none;break-inside:avoid}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 5% 0%,#9ee0b72e,transparent 32%),var(--bg);color:var(--text);font:15px/1.65 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:42px 20px;background:linear-gradient(125deg,#102e21,#18734a);color:white}
+header .inner,main{max-width:1120px;margin:auto}
+header h1{margin:0;font-size:clamp(32px,5vw,48px);letter-spacing:-1.5px}
+header p{margin:5px 0 0;color:#d0e9d9}
+main{padding:28px 18px 55px}
+section{margin-bottom:20px;padding:25px;background:#ffffffef;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+h2{margin:0;font-size:22px;line-height:1.4}
+h3{margin:0 0 12px}
+.section-head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.step{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:13px;background:var(--green2);color:var(--green);font-weight:850}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:15px}
+.field{min-width:0}
+label{display:block;margin-bottom:6px;font-size:13px;font-weight:750}
+input,select,textarea{width:100%;min-width:0;min-height:44px;padding:10px 12px;border:1px solid #dce6de;border-radius:11px;background:#fbfdfb;color:var(--text);font:inherit;font-size:14px}
+input:focus,select:focus,textarea:focus{outline:2px solid #8dd3a6;border-color:var(--green)}
+button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-radius:11px;background:linear-gradient(135deg,#208b57,#146d43);color:white;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+button:hover{filter:brightness(1.07)}
+button.secondary{background:#edf8f0;color:#17683f;border-color:#d9eee0}
+button.danger{background:#fff0f0;color:#ad3030;border-color:#f3d8d8}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:17px}
+.muted,small{color:var(--muted);font-size:12px}
+.notice,.success{margin:12px 0;padding:13px 15px;border-radius:11px;font-size:13px}
+.notice{background:var(--orange);color:#80551b;border:1px solid #f3e3c2}
+.success{background:#eaf8ee;color:#17683f;border:1px solid #d0ecd9}
+.person,.day{margin-bottom:15px;padding:19px;border:1px solid var(--border);border-radius:16px;background:#fff}
+.person{border-left:4px solid #39a86b}
+.person-title{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.macro-grid{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:10px;margin-top:14px;padding:13px;background:#f1f7f2;border-radius:12px}
+.checks,.mode{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0}
+.check,.mode label{display:flex;align-items:center;gap:7px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#fbfdfb;cursor:pointer}
+.check input,.mode input{width:auto;min-height:auto;accent-color:var(--green)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:12px}
+.stat{padding:15px;background:linear-gradient(145deg,#f1faf3,#e7f5eb);border:1px solid #deeee2;border-radius:13px}
+.stat strong{display:block;color:#176e43;font-size:25px}
+.stat span{font-size:12px;color:#64776a}
+.meal{margin:12px 0;padding:17px;border:1px solid #e5ece6;border-radius:14px;background:#fbfdfb}
+.meal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.meal h4{margin:0;font-size:17px}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.pill{padding:4px 8px;border:1px solid #dceee1;border-radius:7px;background:#edf8f0;color:#246c43;font-size:11px;font-weight:750}
+.ingredient-list{padding-left:20px;font-size:13px}
+.shopping-item{display:flex;align-items:center;gap:10px;margin-bottom:7px;padding:11px;border:1px solid var(--border);border-radius:10px;background:#fbfdfb}
+.shopping-item input{width:17px;min-height:17px}
+.shopping-item span{font-size:14px}
+.hidden{display:none!important}
+.contact-info{padding:14px;background:#f0f8f2;border:1px solid #dceee1;border-radius:12px}
+.contact-form{display:grid;gap:13px;max-width:720px}
+.contact-form textarea{min-height:120px;resize:vertical}
+footer{text-align:center;padding:22px;color:#87948b;font-size:12px}
+@media(max-width:700px){
+ header{padding:30px 18px}
+ main{padding:18px 10px 35px}
+ section{padding:17px}
+ .macro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .meal-head{flex-direction:column}
+ .actions button{flex:1 1 100%}
+}
+@media print{
+ header{background:white;color:#172b23;padding:12px 0}
+ header p,#setup,#peopleSection,#preferences,#generateSection,.actions,.no-print,footer,#contactSection{display:none!important}
+ main{padding:0}
+ section,.day,.meal{box-shadow:none;break-inside:avoid}
+}
 </style>
 </head>
 <body>
-<header><div class="inner"><h1>🥗 AlergoPlan</h1><p>Indywidualne potrzeby. Jeden wspólny plan posiłków.</p></div></header>
-<main>
+<header>
+ <div class="inner">
+  <h1>🥗 AlergoPlan</h1>
+  <p>Indywidualne potrzeby. Jeden wspólny plan posiłków.</p>
+ </div>
+</header>
 
+<main>
 <section id="setup">
  <div class="section-head"><div class="step">1</div><h2>Wybierz sposób planowania</h2></div>
-
  <div class="grid">
   <div class="field">
    <label for="planningMode">Tryb planowania</label>
@@ -36,7 +93,6 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
     <option value="selected">Tylko wybrane rodzaje posiłków</option>
    </select>
   </div>
-
   <div class="field">
    <label for="peopleCount">Liczba osób</label>
    <select id="peopleCount">
@@ -44,7 +100,6 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
     <option>5</option><option>6</option><option>7</option><option>8</option>
    </select>
   </div>
-
   <div class="field">
    <label for="daysCount">Liczba dni</label>
    <select id="daysCount">
@@ -55,7 +110,6 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
     <option value="14">14 dni</option>
    </select>
   </div>
-
   <div class="field" id="mealsCountField">
    <label for="mealsCount">Posiłki dziennie</label>
    <select id="mealsCount">
@@ -76,6 +130,11 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
    <label class="check"><input type="checkbox" name="selectedMeal" value="Podwieczorek"> Podwieczorek</label>
    <label class="check"><input type="checkbox" name="selectedMeal" value="Kolacja"> Kolacja</label>
   </div>
+  <div id="mealMacroTargets" style="margin-top:20px">
+   <h3>Cele makro dla poszczególnych posiłków (opcjonalnie)</h3>
+   <p class="muted">Ustawienia dotyczą jednej porcji. Puste pola oznaczają brak celu. Generator będzie szukać przepisów najbliższych podanym wartościom.</p>
+   <div id="mealMacroTargetFields"></div>
+  </div>
  </div>
 </section>
 
@@ -84,15 +143,32 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
  <p class="muted">Wartości możesz wpisać samodzielnie. Cele grupowe są sumą wartości poszczególnych osób.</p>
  <div class="notice">Wartości odżywcze i obliczenia są orientacyjne. Automatyczne obliczanie zapotrzebowania jest przeznaczone wyłącznie dla dorosłych. Dzieci, nastolatki i osoby ze szczególnymi potrzebami powinny ustalać cele z odpowiednim specjalistą.</div>
  <div id="peopleForms"></div>
- <div class="actions"><button id="rebuildPeople" class="secondary" type="button">Zastosuj liczbę osób</button><button id="calculateAll" type="button">Oblicz osoby z wybranym trybem</button></div>
+ <div class="actions">
+  <button id="rebuildPeople" class="secondary" type="button">Zastosuj liczbę osób</button>
+  <button id="calculateAll" type="button">Oblicz osoby z wybranym trybem</button>
+ </div>
  <div id="macroSummary" class="hidden"></div>
 </section>
 
 <section id="preferences">
  <div class="section-head"><div class="step">3</div><h2>Preferencje i wykluczenia</h2></div>
  <div class="grid">
-  <div class="field"><label for="diet">Rodzaj diety</label><select id="diet"><option value="all">Bez dodatkowych ograniczeń</option><option value="vegetarian">Wegetariańska</option><option value="vegan">Wegańska</option></select></div>
-  <div class="field"><label for="goal">Cel planu</label><select id="goal"><option value="balanced">Zbilansowana dieta</option><option value="protein">Więcej białka</option><option value="simple">Proste posiłki</option></select></div>
+  <div class="field">
+   <label for="diet">Rodzaj diety</label>
+   <select id="diet">
+    <option value="all">Bez dodatkowych ograniczeń</option>
+    <option value="vegetarian">Wegetariańska</option>
+    <option value="vegan">Wegańska</option>
+   </select>
+  </div>
+  <div class="field">
+   <label for="goal">Cel planu</label>
+   <select id="goal">
+    <option value="balanced">Zbilansowana dieta</option>
+    <option value="protein">Więcej białka</option>
+    <option value="simple">Proste posiłki</option>
+   </select>
+  </div>
  </div>
  <h3 style="margin-top:18px">Wyklucz alergeny lub składniki</h3>
  <div class="checks">
@@ -105,30 +181,52 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
   <label class="check"><input type="checkbox" name="allergen" value="sezam"> Sezam</label>
   <label class="check"><input type="checkbox" name="allergen" value="mięso"> Mięso</label>
  </div>
- <div class="field" style="margin-top:15px"><label for="excludeText">Dodatkowe składniki do wykluczenia (oddziel przecinkami)</label><input id="excludeText" placeholder="np. pieczarki, oliwki, krewetki"></div>
+ <div class="field" style="margin-top:15px">
+  <label for="excludeText">Dodatkowe składniki do wykluczenia (oddziel przecinkami)</label>
+  <input id="excludeText" placeholder="np. pieczarki, oliwki, krewetki">
+ </div>
  <p class="muted">Uwaga: generator nie gwarantuje bezpieczeństwa alergicznego. Sprawdzaj etykiety, ostrzeżenia o śladowych ilościach i ryzyko zanieczyszczenia krzyżowego. W razie poważnej alergii sprawdź każdy produkt i przepis.</p>
 </section>
 
 <section id="generateSection">
  <div class="section-head"><div class="step">4</div><h2>Generowanie jadłospisu</h2></div>
  <p class="muted">Baza zawiera 50 podstawowych przepisów bez glutenu — po 10 na każdy rodzaj posiłku. Składniki są podawane w ilościach orientacyjnych na osobę.</p>
- <div class="actions"><button id="generate" type="button">Wygeneruj jadłospis</button><button id="printPlan" class="secondary" type="button">Drukuj / zapisz PDF</button></div>
+ <div class="actions">
+  <button id="generate" type="button">Wygeneruj jadłospis</button>
+  <button id="printPlan" class="secondary" type="button">Drukuj / zapisz PDF</button>
+ </div>
  <div id="errors" role="status" aria-live="polite"></div>
 </section>
 
-<section id="summarySection" class="hidden"><div class="section-head"><div class="step">✓</div><h2>Podsumowanie celów grupy</h2></div><div id="groupStats" class="stat-grid"></div></section>
-<section id="planSection" class="hidden"><div class="section-head"><div class="step">5</div><h2>Twój jadłospis</h2></div><div id="mealPlan"></div></section>
-<section id="shoppingSection" class="hidden"><div class="section-head"><div class="step">6</div><h2>Lista zakupów</h2></div><p class="muted">Ilości są szacunkowe. Sprawdź, czy produkty są zgodne z wymaganiami wszystkich osób.</p><div id="shoppingList"></div><div class="actions no-print"><button id="copyShopping" class="secondary" type="button">Kopiuj listę zakupów</button></div></section>
+<section id="summarySection" class="hidden">
+ <div class="section-head"><div class="step">✓</div><h2>Podsumowanie celów grupy</h2></div>
+ <div id="groupStats" class="stat-grid"></div>
+</section>
+<section id="planSection" class="hidden">
+ <div class="section-head"><div class="step">5</div><h2>Twój jadłospis</h2></div>
+ <div id="mealPlan"></div>
+</section>
+<section id="shoppingSection" class="hidden">
+ <div class="section-head"><div class="step">6</div><h2>Lista zakupów</h2></div>
+ <p class="muted">Ilości są szacunkowe. Sprawdź, czy produkty są zgodne z wymaganiami wszystkich osób.</p>
+ <div id="shoppingList"></div>
+ <div class="actions no-print"><button id="copyShopping" class="secondary" type="button">Kopiuj listę zakupów</button></div>
+</section>
 
 <section id="contactSection">
  <div class="section-head"><div class="step">7</div><h2>Kontakt</h2></div>
  <p>Masz pomysł na nowe przepisy albo chcesz zgłosić błąd? Napisz do nas.</p>
- <div class="contact-info"><strong>Adres e-mail</strong><p><a href="mailto:kontakt@alergoplan.pl">kontakt@alergoplan.pl</a></p><p class="muted">Przycisk otwiera aplikację pocztową z przygotowaną wiadomością.</p></div>
+ <div class="contact-info">
+  <strong>Adres e-mail</strong>
+  <p><a href="mailto:kontakt@alergoplan.pl">kontakt@alergoplan.pl</a></p>
+  <p class="muted">Przycisk otwiera aplikację pocztową z przygotowaną wiadomością.</p>
+ </div>
  <form id="contactForm" class="contact-form">
   <div class="field"><label for="contactName">Imię (opcjonalnie)</label><input id="contactName" autocomplete="name" placeholder="Twoje imię"></div>
   <div class="field"><label for="contactEmail">Twój adres e-mail (opcjonalnie)</label><input id="contactEmail" type="email" autocomplete="email" placeholder="twoj@email.pl"></div>
   <div class="field"><label for="contactMessage">Wiadomość</label><textarea id="contactMessage" required placeholder="Wpisz wiadomość…"></textarea></div>
-  <div class="actions no-print"><button type="submit">Wyślij wiadomość</button></div><p id="contactStatus" class="muted" role="status" aria-live="polite"></p>
+  <div class="actions no-print"><button type="submit">Wyślij wiadomość</button></div>
+  <p id="contactStatus" class="muted" role="status" aria-live="polite"></p>
  </form>
 </section>
 <footer>AlergoPlan — orientacyjne planowanie posiłków. Nie zastępuje porady lekarza ani dietetyka.</footer>
@@ -136,6 +234,7 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
 
 <script>
 "use strict";
+
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const round=n=>Math.round(Number(n)||0);
@@ -143,8 +242,75 @@ const types=["Śniadanie","Drugie śniadanie","Obiad","Podwieczorek","Kolacja"];
 const peopleSeed=()=>({name:"",mode:"manual",sex:"female",age:30,weight:"",height:"",activity:1.4,kcal:2000,protein:100,carbs:250,fat:67});
 let people=[peopleSeed()],currentPlan=[];
 
+const mealMacroTargets={};
+
+function renderMealMacroTargets(){
+ const container=$("mealMacroTargetFields");
+ if(!container)return;
+
+ const selected=[...document.querySelectorAll('input[name="selectedMeal"]:checked')].map(x=>x.value);
+ const fields=[["kcal","Kalorie (kcal)"],["p","Białko (g)"],["c","Węglowodany (g)"],["f","Tłuszcze (g)"]];
+
+ container.innerHTML=selected.map(type=>{
+  const target=mealMacroTargets[type]||{};
+  return `<div class="person" style="margin-top:10px">
+   <h3>${esc(type)}</h3>
+   <div class="macro-grid">`+
+   fields.map(([key,label])=>`
+    <div class="field">
+     <label>${label}</label>
+     <input type="number" min="0" step="any"
+      data-meal-type="${esc(type)}"
+      data-meal-macro="${key}"
+      value="${target[key]??""}"
+      placeholder="Bez celu">
+    </div>`).join("")+
+   `</div></div>`;
+ }).join("")||'<p class="muted">Zaznacz rodzaj posiłku, aby ustawić jego cele.</p>';
+
+ container.querySelectorAll("[data-meal-type]").forEach(input=>{
+  input.addEventListener("input",()=>{
+   const type=input.dataset.mealType;
+   const key=input.dataset.mealMacro;
+   if(!mealMacroTargets[type])mealMacroTargets[type]={};
+
+   if(input.value.trim()===""){
+    delete mealMacroTargets[type][key];
+   }else{
+    const value=Number(input.value);
+    if(Number.isFinite(value)&&value>=0)mealMacroTargets[type][key]=value;
+    else delete mealMacroTargets[type][key];
+   }
+  });
+ });
+}
+
+function hasMealTarget(type){
+ const target=mealMacroTargets[type]||{};
+ return ["kcal","p","c","f"].some(key=>
+  target[key]!==undefined&&target[key]!==""&&
+  Number.isFinite(Number(target[key]))&&Number(target[key])>=0
+ );
+}
+
+function macroDistance(recipe,type){
+ const target=mealMacroTargets[type]||{};
+ const pairs=[["kcal","kcal"],["p","p"],["c","c"],["f","f"]];
+ const distances=[];
+
+ for(const [targetKey,recipeKey] of pairs){
+  if(target[targetKey]!==undefined&&target[targetKey]!==""&&
+     Number.isFinite(Number(target[targetKey]))&&Number(target[targetKey])>=0){
+   const wanted=Number(target[targetKey]);
+   const actual=Number(recipe[recipeKey])||0;
+   distances.push(Math.abs(actual-wanted)/Math.max(wanted,10));
+  }
+ }
+ if(!distances.length)return Infinity;
+ return distances.reduce((sum,value)=>sum+value,0)/distances.length;
+}
+
 const raw=[
-/* ŚNIADANIA: 10 */
 ["Śniadanie","Jaglanka z jabłkiem i cynamonem","vegan",[["kasza jaglana",60],["jabłko",150],["napój ryżowy",200],["cynamon",1]],[],360,8,68,6,"Ugotuj kaszę w napoju. Podaj z jabłkiem i cynamonem."],
 ["Śniadanie","Owsianka z bananem — płatki certyfikowane bez glutenu","vegan",[["płatki owsiane bezglutenowe",60],["napój ryżowy",200],["banan",100]],[],350,7,70,5,"Ugotuj płatki w napoju, dodaj banana."],
 ["Śniadanie","Jajka z pomidorem i ziemniakami","vegetarian",[["jajka",2],["pomidor",120],["ziemniaki",150],["oliwa",5]],["jajka"],330,18,35,12,"Ugotuj ziemniaki i jajka. Podaj z pomidorem."],
@@ -155,7 +321,7 @@ const raw=[
 ["Śniadanie","Placki bananowo-ryżowe","vegetarian",[["banan",100],["jajka",2],["mąka ryżowa",40],["olej",5]],["jajka"],370,14,48,13,"Zblenduj składniki i usmaż małe placki."],
 ["Śniadanie","Kasza gryczana z pieczonym jabłkiem","vegan",[["kasza gryczana",60],["jabłko",150],["napój ryżowy",150]],[],330,8,64,4,"Ugotuj kaszę i podaj z upieczonym jabłkiem."],
 ["Śniadanie","Pudding chia z bananem","vegan",[["nasiona chia",25],["napój ryżowy",200],["banan",100]],[],300,6,43,11,"Wymieszaj chia z napojem, schłodź i dodaj banana."],
-/* DRUGIE ŚNIADANIA: 10 */
+
 ["Drugie śniadanie","Jogurt z borówkami","vegetarian",[["jogurt naturalny",180],["borówki",100]],["mleko"],180,10,25,4,"Wymieszaj jogurt z umytymi borówkami."],
 ["Drugie śniadanie","Wafle ryżowe z awokado","vegan",[["wafle ryżowe",3],["awokado",60],["pomidor",80]],[],260,5,34,12,"Rozgnieć awokado, posmaruj wafle i dodaj pomidora."],
 ["Drugie śniadanie","Koktajl kefir-malina-banan","vegetarian",[["kefir",200],["maliny",80],["banan",80]],["mleko"],230,9,38,4,"Zblenduj wszystkie składniki."],
@@ -166,7 +332,7 @@ const raw=[
 ["Drugie śniadanie","Jajko i pomidorki","vegetarian",[["jajka",1],["pomidory koktajlowe",120],["ogórek",80]],["jajka"],150,8,12,7,"Ugotuj jajko i podaj z warzywami."],
 ["Drugie śniadanie","Pudding ryżowy z malinami","vegan",[["ryż suchy",35],["napój kokosowy",150],["maliny",80]],[],230,4,45,4,"Ugotuj ryż w napoju i dodaj maliny."],
 ["Drugie śniadanie","Pieczona ciecierzyca","vegan",[["ciecierzyca",120],["oliwa",4],["papryka słodka",2]],[],210,10,29,6,"Osusz ciecierzycę, wymieszaj z oliwą i przyprawami, upiecz."],
-/* OBIADY: 10 */
+
 ["Obiad","Kurczak z ryżem i brokułami","all",[["pierś kurczaka",150],["ryż suchy",70],["brokuł",180],["oliwa",5]],[],560,42,67,10,"Ugotuj ryż i brokuły. Kurczaka upiecz lub usmaż."],
 ["Obiad","Indyk z kaszą gryczaną","all",[["pierś indyka",150],["kasza gryczana",70],["cukinia",100],["marchew",100]],[],490,39,59,7,"Ugotuj kaszę, indyka upiecz, warzywa podduś."],
 ["Obiad","Dorsz z ziemniakami","all",[["filet z dorsza",160],["ziemniaki",250],["fasolka szparagowa",150],["oliwa",5]],["ryby"],450,35,55,8,"Upiecz dorsza i ugotuj ziemniaki z fasolką."],
@@ -177,7 +343,7 @@ const raw=[
 ["Obiad","Tofu z ryżem i warzywami","vegan",[["tofu",150],["ryż suchy",65],["cukinia",100],["papryka",100]],["soja"],510,25,63,14,"Podsmaż tofu z warzywami i podaj z ugotowanym ryżem."],
 ["Obiad","Zupa z czerwonej soczewicy","vegan",[["soczewica sucha",65],["marchew",80],["passata",150],["ryż suchy",40]],[],450,20,75,4,"Ugotuj soczewicę i marchew w passacie z wodą; podaj z ryżem."],
 ["Obiad","Pieczone warzywa z fetą i ziemniakami","vegetarian",[["ziemniaki",200],["cukinia",100],["papryka",100],["ser feta",35]],["mleko"],430,13,57,14,"Pokrój warzywa i ziemniaki, upiecz. Dodaj fetę."],
-/* PODWIECZORKI: 10 */
+
 ["Podwieczorek","Pieczone jabłko z cynamonem","vegan",[["jabłko",180],["cynamon",1]],[],120,1,32,0,"Upiecz jabłko z cynamonem do miękkości."],
 ["Podwieczorek","Jogurt z gruszką","vegetarian",[["jogurt naturalny",180],["gruszka",120]],["mleko"],190,9,29,4,"Pokrój gruszkę i wymieszaj z jogurtem."],
 ["Podwieczorek","Wafle ryżowe z masłem orzechowym","vegan",[["wafle ryżowe",2],["masło orzechowe",15],["banan",50]],["orzechy"],220,5,32,9,"Posmaruj wafle masłem orzechowym i dodaj banana."],
@@ -188,7 +354,7 @@ const raw=[
 ["Podwieczorek","Koktajl truskawkowo-bananowy","vegan",[["truskawki",120],["banan",100],["napój ryżowy",150]],[],200,3,45,2,"Zblenduj składniki na gładki koktajl."],
 ["Podwieczorek","Gruszka z pestkami dyni","vegan",[["gruszka",150],["pestki dyni",15]],[],190,5,29,8,"Pokrój gruszkę i podaj z pestkami dyni."],
 ["Podwieczorek","Pudding chia z kakao","vegan",[["nasiona chia",20],["napój ryżowy",180],["kakao",5],["banan",70]],[],240,5,36,9,"Wymieszaj chia, napój i kakao. Schłodź, podaj z bananem."],
-/* KOLACJE: 10 */
+
 ["Kolacja","Sałatka z komosą i ciecierzycą","vegan",[["komosa ryżowa sucha",50],["ciecierzyca",100],["ogórek",100],["pomidor",120],["oliwa",5]],[],430,15,62,12,"Ugotuj komosę, połącz z ciecierzycą i warzywami."],
 ["Kolacja","Omlet z cukinią i pomidorem","vegetarian",[["jajka",2],["cukinia",100],["pomidor",100],["oliwa",5]],["jajka"],300,19,13,19,"Podsmaż warzywa, dodaj jajka i zetnij pod przykryciem."],
 ["Kolacja","Sałatka z jajkiem i ziemniakami","vegetarian",[["jajka",2],["ziemniaki",180],["ogórek",100],["sałata",50]],["jajka"],330,17,35,12,"Ugotuj jajka i ziemniaki, pokrój i wymieszaj z warzywami."],
@@ -201,7 +367,11 @@ const raw=[
 ["Kolacja","Sałatka z pieczonymi warzywami","vegan",[["cukinia",100],["papryka",100],["ziemniaki",150],["rukola",30],["oliwa",5]],[],320,7,49,10,"Upiecz pokrojone warzywa i ziemniaki, podaj na rukoli."]
 ];
 
-let recipes=raw.map((r,i)=>({id:i+1,type:r[0],name:r[1],diet:r[2],ingredients:r[3],tags:r[4],kcal:r[5],p:r[6],c:r[7],f:r[8],steps:r[9],glutenFree:true}));
+let recipes=raw.map((r,i)=>({
+ id:i+1,type:r[0],name:r[1],diet:r[2],ingredients:r[3],tags:r[4],
+ kcal:r[5],p:r[6],c:r[7],f:r[8],steps:r[9],glutenFree:true,variant:false
+}));
+
 const extras=[
  ["z bazylią","bazylia",1,[]],["z koperkiem","koperek",2,[]],
  ["z natką pietruszki","natka pietruszki",2,[]],["z sokiem z cytryny","sok z cytryny",5,[]],
@@ -210,101 +380,221 @@ const extras=[
  ["z papryką","papryka",20,[]],["z marchewką","marchew",20,[]],
  ["ze szpinakiem","szpinak",15,[]],["z sezamem","sezam",5,["sezam"]]
 ];
+
 const baseRecipes=recipes.slice();
 let nextId=recipes.length+1;
+
 for(let i=0;i<baseRecipes.length*extras.length;i++){
- const b=baseRecipes[i%baseRecipes.length],x=extras[Math.floor(i/baseRecipes.length)];
+ const b=baseRecipes[i%baseRecipes.length];
+ const x=extras[Math.floor(i/baseRecipes.length)];
  const tags=[...b.tags,...x[3]].filter((v,i,a)=>a.indexOf(v)===i);
- const r={...b,id:nextId++,name:b.name+" "+x[0],ingredients:b.ingredients.map(v=>[...v]).concat([[x[1],x[2]]]),tags,steps:b.steps+" Opcjonalny dodatek: "+x[1]+".",variant:true};
- if(x[1]==="sezam"&&!r.tags.includes("sezam"))r.tags.push("sezam");
- r.kcal+=Math.round(x[2]*0.7);
+ const r={
+  ...b,id:nextId++,name:b.name+" "+x[0],
+  ingredients:b.ingredients.map(v=>[...v]).concat([[x[1],x[2]]]),
+  tags,steps:b.steps+" Opcjonalny dodatek: "+x[1]+".",variant:true
+ };
  recipes.push(r);
 }
 
 const units={
-"kasza jaglana":"g","jabłko":"g","napój ryżowy":"ml","cynamon":"g","płatki owsiane bezglutenowe":"g","banan":"g","jajka":"szt.","pomidor":"g","ziemniaki":"g","oliwa":"ml","komosa ryżowa sucha":"g","maliny":"g","szpinak":"g","ryż suchy":"g","napój kokosowy":"ml","tofu":"g","papryka":"g","mąka ryżowa":"g","olej":"ml","kasza gryczana":"g","nasiona chia":"g","jogurt naturalny":"g","borówki":"g","wafle ryżowe":"szt.","awokado":"g","kefir":"ml","serek wiejski":"g","ogórek":"g","szczypiorek":"g","gruszka":"g","truskawki":"g","hummus":"g","marchew":"g","mango":"g","pomidory koktajlowe":"g","ciecierzyca":"g","papryka słodka":"g","pierś kurczaka":"g","ryż":"g","brokuł":"g","pierś indyka":"g","cukinia":"g","filet z dorsza":"g","fasolka szparagowa":"g","mleczko kokosowe":"ml","soczewica sucha":"g","passata":"g","filet z łososia":"g","fasola czerwona":"g","ser feta":"g","napój migdałowy":"ml","fasola biała":"g","mleko":"ml","kaszka kukurydziana":"g","masło orzechowe":"g","daktyle":"g","wiórki kokosowe":"g","pestki słonecznika":"g","brzoskwinia":"g","pestki dyni":"g","kakao":"g","tuńczyk":"g","sałata":"g","twaróg":"g","rukola":"g","bazylia":"g","koperek":"g","natka pietruszki":"g","sok z cytryny":"ml","siemię lniane":"g","oliwki":"g","sezam":"g"
+"kasza jaglana":"g","jabłko":"g","napój ryżowy":"ml","cynamon":"g",
+"płatki owsiane bezglutenowe":"g","banan":"g","jajka":"szt.","pomidor":"g",
+"ziemniaki":"g","oliwa":"ml","komosa ryżowa sucha":"g","maliny":"g",
+"szpinak":"g","ryż suchy":"g","napój kokosowy":"ml","tofu":"g","papryka":"g",
+"mąka ryżowa":"g","olej":"ml","kasza gryczana":"g","nasiona chia":"g",
+"jogurt naturalny":"g","borówki":"g","wafle ryżowe":"szt.","awokado":"g",
+"kefir":"ml","serek wiejski":"g","ogórek":"g","szczypiorek":"g",
+"gruszka":"g","truskawki":"g","hummus":"g","marchew":"g","mango":"g",
+"pomidory koktajlowe":"g","ciecierzyca":"g","papryka słodka":"g",
+"pierś kurczaka":"g","ryż":"g","brokuł":"g","pierś indyka":"g",
+"cukinia":"g","filet z dorsza":"g","fasolka szparagowa":"g",
+"mleczko kokosowe":"ml","soczewica sucha":"g","passata":"g",
+"filet z łososia":"g","fasola czerwona":"g","ser feta":"g",
+"napój migdałowy":"ml","fasola biała":"g","mleko":"ml",
+"kaszka kukurydziana":"g","masło orzechowe":"g","daktyle":"g",
+"wiórki kokosowe":"g","pestki słonecznika":"g","brzoskwinia":"g",
+"pestki dyni":"g","kakao":"g","tuńczyk":"g","sałata":"g","twaróg":"g",
+"rukola":"g","bazylia":"g","koperek":"g","natka pietruszki":"g",
+"sok z cytryny":"ml","siemię lniane":"g","oliwki":"g","sezam":"g"
 };
+
 const unitFor=n=>units[n]||"g";
+
 function makePerson(i){return {...peopleSeed(),name:"Osoba "+i};}
-function macroInput(label,field,value){return `<div class="field"><label>${label}</label><input type="number" min="0" data-field="${field}" value="${value}"></div>`;}
+
+function macroInput(label,field,value){
+ return `<div class="field"><label>${label}</label><input type="number" min="0" data-field="${field}" value="${value}"></div>`;
+}
+
 function personForm(p,i){
  return `<div class="person" data-person="${i}">
  <div class="person-title"><h3>Osoba ${i+1}</h3><span class="muted">Indywidualny cel</span></div>
  <div class="grid">
- <div class="field"><label>Imię lub etykieta</label><input data-field="name" value="${esc(p.name)}"></div>
- <div class="field"><label>Metoda</label><select data-field="mode"><option value="manual" ${p.mode==="manual"?"selected":""}>Wpisuję ręcznie</option><option value="calculate" ${p.mode==="calculate"?"selected":""}>Oblicz dla dorosłego</option></select></div>
+  <div class="field"><label>Imię lub etykieta</label><input data-field="name" value="${esc(p.name)}"></div>
+  <div class="field"><label>Metoda</label><select data-field="mode"><option value="manual" ${p.mode==="manual"?"selected":""}>Wpisuję ręcznie</option><option value="calculate" ${p.mode==="calculate"?"selected":""}>Oblicz dla dorosłego</option></select></div>
  </div>
  <div class="grid calc-fields ${p.mode==="calculate"?"":"hidden"}" style="margin-top:12px">
- <div class="field"><label>Wiek (18–100)</label><input type="number" min="18" max="100" data-field="age" value="${p.age}"></div>
- <div class="field"><label>Wariant wzoru</label><select data-field="sex"><option value="female" ${p.sex==="female"?"selected":""}>Kobieta</option><option value="male" ${p.sex==="male"?"selected":""}>Mężczyzna</option></select></div>
- <div class="field"><label>Masa ciała (kg)</label><input type="number" min="30" max="300" step=".1" data-field="weight" value="${p.weight}"></div>
- <div class="field"><label>Wzrost (cm)</label><input type="number" min="120" max="230" data-field="height" value="${p.height}"></div>
- <div class="field"><label>Aktywność</label><select data-field="activity"><option value="1.2">Niska</option><option value="1.4" ${Number(p.activity)===1.4?"selected":""}>Lekka</option><option value="1.6" ${Number(p.activity)===1.6?"selected":""}>Umiarkowana</option><option value="1.8" ${Number(p.activity)===1.8?"selected":""}>Wysoka</option></select></div>
+  <div class="field"><label>Wiek (18–100)</label><input type="number" min="18" max="100" data-field="age" value="${p.age}"></div>
+  <div class="field"><label>Wariant wzoru</label><select data-field="sex"><option value="female" ${p.sex==="female"?"selected":""}>Kobieta</option><option value="male" ${p.sex==="male"?"selected":""}>Mężczyzna</option></select></div>
+  <div class="field"><label>Masa ciała (kg)</label><input type="number" min="30" max="300" step=".1" data-field="weight" value="${p.weight}"></div>
+  <div class="field"><label>Wzrost (cm)</label><input type="number" min="120" max="230" data-field="height" value="${p.height}"></div>
+  <div class="field"><label>Aktywność</label><select data-field="activity"><option value="1.2">Niska</option><option value="1.4" ${Number(p.activity)===1.4?"selected":""}>Lekka</option><option value="1.6" ${Number(p.activity)===1.6?"selected":""}>Umiarkowana</option><option value="1.8" ${Number(p.activity)===1.8?"selected":""}>Wysoka</option></select></div>
  </div>
  <div class="macro-grid">
- ${macroInput("Kalorie (kcal/dzień)","kcal",p.kcal)}${macroInput("Białko (g/dzień)","protein",p.protein)}${macroInput("Węglowodany (g/dzień)","carbs",p.carbs)}${macroInput("Tłuszcze (g/dzień)","fat",p.fat)}
- </div><p class="muted">Wartości możesz edytować ręcznie.</p><div class="person-status"></div></div>`;
+  ${macroInput("Kalorie (kcal/dzień)","kcal",p.kcal)}
+  ${macroInput("Białko (g/dzień)","protein",p.protein)}
+  ${macroInput("Węglowodany (g/dzień)","carbs",p.carbs)}
+  ${macroInput("Tłuszcze (g/dzień)","fat",p.fat)}
+ </div>
+ <p class="muted">Wartości możesz edytować ręcznie.</p>
+ <div class="person-status"></div></div>`;
 }
+
 function renderPeople(){
  const n=Number($("peopleCount").value);
  while(people.length<n)people.push(makePerson(people.length+1));
  people=people.slice(0,n);
  $("peopleForms").innerHTML=people.map(personForm).join("");
- document.querySelectorAll(".person").forEach((el,i)=>{
+
+ document.querySelectorAll("#peopleForms .person").forEach((el,i)=>{
   el.querySelectorAll("[data-field]").forEach(inp=>{
-   const update=()=>{const f=inp.dataset.field;let v=inp.value;if(["kcal","protein","carbs","fat","age","weight","height","activity"].includes(f))v=v===""?"":Number(v);people[i][f]=v;if(f==="mode")renderPeople();};
-   inp.addEventListener("change",update);
+   inp.addEventListener("change",()=>{
+    const f=inp.dataset.field;
+    let v=inp.value;
+    if(["kcal","protein","carbs","fat","age","weight","height","activity"].includes(f))v=v===""?"":Number(v);
+    people[i][f]=v;
+    if(f==="mode")renderPeople();
+   });
   });
  });
 }
+
 function readPeople(){
- document.querySelectorAll(".person").forEach((el,i)=>el.querySelectorAll("[data-field]").forEach(inp=>{
-  const f=inp.dataset.field;let v=inp.value;if(["kcal","protein","carbs","fat","age","weight","height","activity"].includes(f))v=v===""?"":Number(v);people[i][f]=v;
- }));
+ document.querySelectorAll("#peopleForms .person").forEach((el,i)=>
+  el.querySelectorAll("[data-field]").forEach(inp=>{
+   const f=inp.dataset.field;
+   let v=inp.value;
+   if(["kcal","protein","carbs","fat","age","weight","height","activity"].includes(f))v=v===""?"":Number(v);
+   people[i][f]=v;
+  })
+ );
 }
+
 function calculatePerson(i){
  const p=people[i],w=Number(p.weight),h=Number(p.height),a=Number(p.age);
- if(!(w>=30&&w<=300&&h>=120&&h<=230&&a>=18&&a<=100)){document.querySelectorAll(".person")[i].querySelector(".person-status").innerHTML='<div class="notice">Dla obliczenia uzupełnij poprawnie wiek, masę i wzrost osoby dorosłej.</div>';return false;}
- const bmr=10*w+6.25*h-5*a+(p.sex==="male"?5:-161),k=Math.round(bmr*Number(p.activity));
- p.kcal=k;p.protein=Math.round(k*.2/4);p.carbs=Math.round(k*.5/4);p.fat=Math.round(k*.3/9);return true;
+ if(!(w>=30&&w<=300&&h>=120&&h<=230&&a>=18&&a<=100)){
+  document.querySelectorAll("#peopleForms .person")[i].querySelector(".person-status").innerHTML='<div class="notice">Dla obliczenia uzupełnij poprawnie wiek, masę i wzrost osoby dorosłej.</div>';
+  return false;
+ }
+ const bmr=10*w+6.25*h-5*a+(p.sex==="male"?5:-161);
+ const k=Math.round(bmr*Number(p.activity));
+ p.kcal=k;p.protein=Math.round(k*.2/4);p.carbs=Math.round(k*.5/4);p.fat=Math.round(k*.3/9);
+ return true;
 }
-function stat(label,value,unit){return `<div class="stat"><span>${label}</span><strong>${value}</strong><span>${unit}</span></div>`;}
+
+function stat(label,value,unit){
+ return `<div class="stat"><span>${label}</span><strong>${value}</strong><span>${unit}</span></div>`;
+}
+
 function renderMacroSummary(){
- const t=people.reduce((a,p)=>{["kcal","protein","carbs","fat"].forEach(k=>a[k]+=Number(p[k])||0);return a;},{kcal:0,protein:0,carbs:0,fat:0});
+ const t=people.reduce((a,p)=>{
+  ["kcal","protein","carbs","fat"].forEach(k=>a[k]+=Number(p[k])||0);
+  return a;
+ },{kcal:0,protein:0,carbs:0,fat:0});
  $("macroSummary").classList.remove("hidden");
- $("macroSummary").innerHTML='<h3>Łączne cele wszystkich osób</h3><div class="stat-grid">'+stat("Kalorie",round(t.kcal),"kcal / dzień")+stat("Białko",round(t.protein),"g / dzień")+stat("Węglowodany",round(t.carbs),"g / dzień")+stat("Tłuszcze",round(t.fat),"g / dzień")+"</div>";
+ $("macroSummary").innerHTML='<h3>Łączne cele wszystkich osób</h3><div class="stat-grid">'+
+  stat("Kalorie",round(t.kcal),"kcal / dzień")+
+  stat("Białko",round(t.protein),"g / dzień")+
+  stat("Węglowodany",round(t.carbs),"g / dzień")+
+  stat("Tłuszcze",round(t.fat),"g / dzień")+"</div>";
 }
-function selectedAllergens(){return [...document.querySelectorAll('input[name="allergen"]:checked')].map(x=>x.value);}
-function excludedWords(){return $("excludeText").value.split(",").map(x=>x.trim().toLocaleLowerCase("pl")).filter(Boolean);}
-function containsMeat(r){return r.ingredients.some(x=>/kurczak|indyk|wołow|wieprz|mięso|dorsz|łosoś|tuńczyk|ryb/i.test(x[0]))||r.tags.includes("ryby");}
+
+function selectedAllergens(){
+ return [...document.querySelectorAll('input[name="allergen"]:checked')].map(x=>x.value);
+}
+
+function excludedWords(){
+ return $("excludeText").value.split(",").map(x=>x.trim().toLocaleLowerCase("pl")).filter(Boolean);
+}
+
+function containsMeat(r){
+ return r.ingredients.some(x=>/kurczak|indyk|wołow|wieprz|mięso|dorsz|łosoś|tuńczyk|ryb/i.test(x[0]))||r.tags.includes("ryby");
+}
+
 function recipeAllowed(r){
  const diet=$("diet").value;
  if(diet==="vegan"&&r.diet!=="vegan")return false;
  if(diet==="vegetarian"&&containsMeat(r))return false;
+
  const allergies=selectedAllergens();
  if(allergies.some(a=>r.tags.includes(a)))return false;
  if(allergies.includes("mięso")&&containsMeat(r))return false;
+
  const words=excludedWords();
  const text=(r.name+" "+r.ingredients.map(x=>x[0]).join(" ")).toLocaleLowerCase("pl");
  if(words.some(w=>text.includes(w)))return false;
+
  return true;
 }
+
 function recipesFor(type){
- const list=recipes.filter(r=>r.type===type&&recipeAllowed(r));
+ let list=recipes.filter(r=>r.type===type&&recipeAllowed(r));
+
  if($("goal").value==="protein")list.sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal));
  if($("goal").value==="simple")list.sort((a,b)=>a.ingredients.length-b.ingredients.length);
+
+ if($("planningMode").value==="selected"&&hasMealTarget(type)){
+  list.sort((a,b)=>macroDistance(a,type)-macroDistance(b,type));
+ }
+
  return list;
 }
+
+/*
+  POPRAWIONY GENERATOR:
+  1. Najpierw używa podstawowych przepisów, a nie wariantów z dodatkami.
+  2. Nie wybiera ponownie przepisu użytego wcześniej, jeśli są inne opcje.
+  3. Losuje dania, więc nie powtarza stale tych samych dwóch pozycji.
+  4. Jeśli ustawiono cele makro, wybiera spośród najlepszych dopasowań.
+*/
 function pickRecipe(type,day,slot,used){
- const list=recipesFor(type);if(!list.length)return null;
- let available=list.filter(r=>!used.has(r.id));if(!available.length)available=list;
- const r=available[(day*7+slot*3)%available.length];used.add(r.id);return r;
+ const list=recipesFor(type);
+ if(!list.length)return null;
+
+ let available=list.filter(r=>!used.has(r.id));
+ if(!available.length)available=list;
+
+ // Podstawowe przepisy mają pierwszeństwo przed wariantami.
+ const baseAvailable=available.filter(r=>!r.variant);
+ let pool=baseAvailable.length?baseAvailable:available;
+
+ // Przy celach makro wybierz losowo spośród kilku najbliższych wyników.
+ if($("planningMode").value==="selected"&&hasMealTarget(type)){
+  pool=[...pool].sort((a,b)=>macroDistance(a,type)-macroDistance(b,type));
+  const bestCount=Math.min(5,pool.length);
+  pool=pool.slice(0,bestCount);
+ }else{
+  // Dla celów „więcej białka” i „proste posiłki” zachowaj preferencję,
+  // ale dopuść kilka dań, by plan nie był zawsze identyczny.
+  if($("goal").value==="protein"){
+   pool=[...pool].sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal)).slice(0,Math.min(7,pool.length));
+  }else if($("goal").value==="simple"){
+   pool=[...pool].sort((a,b)=>a.ingredients.length-b.ingredients.length).slice(0,Math.min(7,pool.length));
+  }
+ }
+
+ const r=pool[Math.floor(Math.random()*pool.length)];
+ used.add(r.id);
+ return r;
 }
+
 function updatePlanningMode(){
  const selected=$("planningMode").value==="selected";
  $("selectedMealsBox").classList.toggle("hidden",!selected);
  $("mealsCountField").classList.toggle("hidden",selected);
+ renderMealMacroTargets();
 }
+
 function generatePlan(){
  $("errors").innerHTML="";
  readPeople();
@@ -313,6 +603,7 @@ function generatePlan(){
   $("errors").innerHTML='<div class="notice">Dodaj przynajmniej jedną osobę.</div>';
   return;
  }
+
  if(people.some(p=>["kcal","protein","carbs","fat"].some(k=>p[k]===""||!Number.isFinite(Number(p[k]))||Number(p[k])<0))){
   $("errors").innerHTML='<div class="notice">Uzupełnij prawidłowe, nieujemne wartości kalorii i makro dla każdej osoby.</div>';
   return;
@@ -330,10 +621,12 @@ function generatePlan(){
   }
  }else{
   const meals=Number($("mealsCount").value);
-  chosen=meals===3?["Śniadanie","Obiad","Kolacja"]:meals===4?["Śniadanie","Obiad","Podwieczorek","Kolacja"]:types;
+  chosen=meals===3?["Śniadanie","Obiad","Kolacja"]:
+   meals===4?["Śniadanie","Obiad","Podwieczorek","Kolacja"]:types;
  }
 
  renderMacroSummary();
+
  const used=new Set();
  currentPlan=[];
  const missing=new Map();
@@ -349,77 +642,206 @@ function generatePlan(){
  }
 
  if(missing.size){
-  $("errors").innerHTML='<div class="notice"><strong>Nie znaleziono dania dla wszystkich posiłków.</strong> Brak opcji: '+[...missing].map(([t,n])=>esc(t)+" ("+n+" razy)").join(", ")+'. Zmień filtry lub usuń część wykluczeń. Generator nie zastępuje bezpiecznej weryfikacji alergii.</div>';
+  $("errors").innerHTML='<div class="notice"><strong>Nie znaleziono dania dla wszystkich posiłków.</strong> Brak opcji: '+
+   [...missing].map(([t,n])=>esc(t)+" ("+n+" razy)").join(", ")+
+   '. Zmień filtry lub usuń część wykluczeń. Generator nie zastępuje bezpiecznej weryfikacji alergii.</div>';
  }else{
-  $("errors").innerHTML='<div class="success">Utworzono jadłospis. Lista zakupów zawiera składniki tylko z zaplanowanych posiłków. Sprawdź jeszcze etykiety produktów i skład.</div>';
+  $("errors").innerHTML='<div class="success">Utworzono jadłospis z losowo dobranymi daniami. Lista zakupów zawiera składniki tylko z zaplanowanych posiłków. Sprawdź etykiety produktów i skład.</div>';
  }
 
  renderGroupStats();
  renderPlan();
  renderShopping();
+
  ["summarySection","planSection","shoppingSection"].forEach(id=>$(id).classList.remove("hidden"));
 }
+
 function renderGroupStats(){
- const t=people.reduce((a,p)=>{["kcal","protein","carbs","fat"].forEach(k=>a[k]+=Number(p[k])||0);return a;},{kcal:0,protein:0,carbs:0,fat:0});
- $("groupStats").innerHTML=stat("Osoby",people.length,"w grupie")+stat("Kalorie",round(t.kcal),"kcal / dzień")+stat("Białko",round(t.protein),"g / dzień")+stat("Węglowodany",round(t.carbs),"g / dzień")+stat("Tłuszcze",round(t.fat),"g / dzień");
+ const t=people.reduce((a,p)=>{
+  ["kcal","protein","carbs","fat"].forEach(k=>a[k]+=Number(p[k])||0);
+  return a;
+ },{kcal:0,protein:0,carbs:0,fat:0});
+
+ $("groupStats").innerHTML=
+  stat("Osoby",people.length,"w grupie")+
+  stat("Kalorie",round(t.kcal),"kcal / dzień")+
+  stat("Białko",round(t.protein),"g / dzień")+
+  stat("Węglowodany",round(t.carbs),"g / dzień")+
+  stat("Tłuszcze",round(t.fat),"g / dzień");
 }
-function fmt(n){return Number.isInteger(n)?String(n):String(Math.round(n*10)/10).replace(".",",");}
+
+function fmt(n){
+ return Number.isInteger(n)?String(n):String(Math.round(n*10)/10).replace(".",",");
+}
+
 function renderPlan(){
- $("mealPlan").innerHTML=currentPlan.map(day=>`<div class="day"><h3>Dzień ${day.day}</h3>${day.meals.map(r=>`<article class="meal">
- <div class="meal-head"><div><h4>${esc(r.name)}</h4><span class="muted">${esc(r.type)} · ${r.glutenFree?"przepis bez glutenu":""}</span></div><button type="button" class="secondary no-print" data-swap="${r.id}" data-day="${day.day}" data-slot="${r.slot}">Zamień danie</button></div>
- <div class="pills"><span class="pill">${r.kcal} kcal / osoba</span><span class="pill">B: ${r.p} g</span><span class="pill">W: ${r.c} g</span><span class="pill">T: ${r.f} g</span></div>
- <p class="muted">Cała grupa: ok. ${r.kcal*people.length} kcal</p><strong>Składniki dla ${people.length} ${people.length===1?"osoby":"osób"}:</strong>
- <ul class="ingredient-list">${r.ingredients.map(([n,a])=>`<li>${esc(n)}: ${fmt(a*people.length)} ${esc(unitFor(n))}</li>`).join("")}</ul><p>${esc(r.steps)}</p>
- </article>`).join("")}</div>`).join("");
+ $("mealPlan").innerHTML=currentPlan.map(day=>`
+  <div class="day">
+   <h3>Dzień ${day.day}</h3>
+   ${day.meals.map(r=>`
+    <article class="meal">
+     <div class="meal-head">
+      <div>
+       <h4>${esc(r.name)}</h4>
+       <span class="muted">${esc(r.type)} · ${r.glutenFree?"przepis bez glutenu":""}</span>
+      </div>
+      <button type="button" class="secondary no-print" data-swap="${r.id}" data-day="${day.day}" data-slot="${r.slot}">Zamień danie</button>
+     </div>
+     <div class="pills">
+      <span class="pill">${r.kcal} kcal / osoba</span>
+      <span class="pill">B: ${r.p} g</span>
+      <span class="pill">W: ${r.c} g</span>
+      <span class="pill">T: ${r.f} g</span>
+     </div>
+     <p class="muted">Cała grupa: ok. ${r.kcal*people.length} kcal</p>
+     <strong>Składniki dla ${people.length} ${people.length===1?"osoby":"osób"}:</strong>
+     <ul class="ingredient-list">
+      ${r.ingredients.map(([n,a])=>`<li>${esc(n)}: ${fmt(a*people.length)} ${esc(unitFor(n))}</li>`).join("")}
+     </ul>
+     <p>${esc(r.steps)}</p>
+    </article>
+   `).join("")}
+  </div>
+ `).join("");
 
  $("mealPlan").querySelectorAll("[data-swap]").forEach(btn=>btn.addEventListener("click",()=>{
-  const d=Number(btn.dataset.day),s=Number(btn.dataset.slot),current=currentPlan[d-1]?.meals.find(m=>m.slot===s);
+  const d=Number(btn.dataset.day),s=Number(btn.dataset.slot);
+  const current=currentPlan[d-1]?.meals.find(m=>m.slot===s);
   if(!current)return;
+
   const options=recipesFor(current.type).filter(r=>r.id!==current.id);
-  if(!options.length){alert("Brak alternatywnych dań zgodnych z aktualnymi filtrami.");return;}
-  const next=options[Math.floor(Math.random()*options.length)];
-  currentPlan[d-1].meals=currentPlan[d-1].meals.map(m=>m.slot===s?{...next,day:d,slot:s}:m);
+  if(!options.length){
+   alert("Brak alternatywnych dań zgodnych z aktualnymi filtrami.");
+   return;
+  }
+
+  const usedElsewhere=new Set(
+   currentPlan.flatMap((dayPlan,dayIndex)=>
+    dayPlan.meals
+     .filter(meal=>!(dayIndex===d-1&&meal.slot===s))
+     .map(meal=>meal.id)
+   )
+  );
+
+  let available=options.filter(r=>!usedElsewhere.has(r.id));
+  if(!available.length)available=options;
+
+  // Przy zamianie również preferuj podstawowe, różnorodne przepisy.
+  const baseAvailable=available.filter(r=>!r.variant);
+  let pool=baseAvailable.length?baseAvailable:available;
+
+  if($("planningMode").value==="selected"&&hasMealTarget(current.type)){
+   pool=[...pool].sort((a,b)=>macroDistance(a,current.type)-macroDistance(b,current.type));
+   pool=pool.slice(0,Math.min(5,pool.length));
+  }else if($("goal").value==="protein"){
+   pool=[...pool].sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal)).slice(0,Math.min(7,pool.length));
+  }else if($("goal").value==="simple"){
+   pool=[...pool].sort((a,b)=>a.ingredients.length-b.ingredients.length).slice(0,Math.min(7,pool.length));
+  }
+
+  let next=pool[Math.floor(Math.random()*pool.length)];
+
+  // Jeśli wylosowane danie jest takie samo jak w poprzednim dniu,
+  // spróbuj wybrać inną pozycję, o ile jest dostępna.
+  const previous=currentPlan[d-2]?.meals.find(m=>m.type===current.type);
+  if(previous&&next.name===previous.name&&pool.length>1){
+   const different=pool.filter(r=>r.name!==previous.name);
+   if(different.length)next=different[Math.floor(Math.random()*different.length)];
+  }
+
+  currentPlan[d-1].meals=currentPlan[d-1].meals.map(m=>
+   m.slot===s?{...next,day:d,slot:s}:m
+  );
+
   renderPlan();
   renderShopping();
  }));
 }
+
 function renderShopping(){
  const totals=new Map();
+
  currentPlan.forEach(d=>d.meals.forEach(r=>r.ingredients.forEach(([n,a])=>{
   const key=n+"|"+unitFor(n);
   totals.set(key,(totals.get(key)||0)+a*people.length);
  })));
+
  const items=[...totals.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pl"));
+
  $("shoppingList").innerHTML=items.map(([key,amount])=>{
   const [name,unit]=key.split("|");
   return `<label class="shopping-item"><input type="checkbox"><span>${esc(name)} — <strong>${fmt(amount)} ${esc(unit)}</strong></span></label>`;
  }).join("")||"<p>Brak składników.</p>";
 }
+
 async function copyShopping(){
  const text=[...$("shoppingList").querySelectorAll(".shopping-item span")].map(x=>x.textContent.trim()).join("\n");
- try{await navigator.clipboard.writeText(text);alert("Skopiowano listę zakupów.");}
- catch(e){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();alert("Skopiowano listę zakupów.");}
+
+ try{
+  await navigator.clipboard.writeText(text);
+  alert("Skopiowano listę zakupów.");
+ }catch(e){
+  const ta=document.createElement("textarea");
+  ta.value=text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  ta.remove();
+  alert("Skopiowano listę zakupów.");
+ }
 }
+
 $("contactForm").addEventListener("submit",e=>{
  e.preventDefault();
- const name=$("contactName").value.trim(),email=$("contactEmail").value.trim(),message=$("contactMessage").value.trim();
- if(!message){$("contactStatus").textContent="Wpisz treść wiadomości.";return;}
- const body=[name?"Imię: "+name:"",email?"Adres zwrotny: "+email:"",message].filter(Boolean).join("\n\n");
+
+ const name=$("contactName").value.trim();
+ const email=$("contactEmail").value.trim();
+ const message=$("contactMessage").value.trim();
+
+ if(!message){
+  $("contactStatus").textContent="Wpisz treść wiadomości.";
+  return;
+ }
+
+ const body=[
+  name?"Imię: "+name:"",
+  email?"Adres zwrotny: "+email:"",
+  message
+ ].filter(Boolean).join("\n\n");
+
  $("contactStatus").textContent="Otwieram aplikację pocztową…";
- location.href="mailto:kontakt@alergoplan.pl?subject="+encodeURIComponent("Wiadomość ze strony AlergoPlan")+"&body="+encodeURIComponent(body);
+ location.href="mailto:kontakt@alergoplan.pl?subject="+
+  encodeURIComponent("Wiadomość ze strony AlergoPlan")+
+  "&body="+encodeURIComponent(body);
 });
+
 $("planningMode").addEventListener("change",updatePlanningMode);
+
+document.querySelectorAll('input[name="selectedMeal"]').forEach(input=>{
+ input.addEventListener("change",renderMealMacroTargets);
+});
+
 $("peopleCount").addEventListener("change",renderPeople);
 $("rebuildPeople").addEventListener("click",()=>{readPeople();renderPeople();});
+
 $("calculateAll").addEventListener("click",()=>{
  readPeople();
+
  const failed=[];
- people.forEach((p,i)=>{if(p.mode==="calculate"&&!calculatePerson(i))failed.push(i+1);});
+ people.forEach((p,i)=>{
+  if(p.mode==="calculate"&&!calculatePerson(i))failed.push(i+1);
+ });
+
  renderPeople();
  renderMacroSummary();
- if(failed.length)$("errors").innerHTML='<div class="notice">Sprawdź wiek, masę i wzrost osób: '+failed.join(", ")+'.</div>';
- else $("errors").innerHTML='<div class="success">Obliczono wybrane cele dla dorosłych. Wartości są orientacyjne.</div>';
+
+ if(failed.length){
+  $("errors").innerHTML='<div class="notice">Sprawdź wiek, masę i wzrost osób: '+failed.join(", ")+'.</div>';
+ }else{
+  $("errors").innerHTML='<div class="success">Obliczono wybrane cele dla dorosłych. Wartości są orientacyjne.</div>';
+ }
 });
+
 $("generate").addEventListener("click",generatePlan);
 $("printPlan").addEventListener("click",()=>window.print());
 $("copyShopping").addEventListener("click",copyShopping);
