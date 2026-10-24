@@ -24,12 +24,58 @@ button{min-height:43px;padding:10px 16px;border:1px solid transparent;border-rad
 <body>
 <header><div class="inner"><h1>🥗 AlergoPlan</h1><p>Indywidualne potrzeby. Jeden wspólny plan posiłków.</p></div></header>
 <main>
+
 <section id="setup">
- <div class="section-head"><div class="step">1</div><h2>Ustawienia jadłospisu</h2></div>
+ <div class="section-head"><div class="step">1</div><h2>Wybierz sposób planowania</h2></div>
+
  <div class="grid">
-  <div class="field"><label for="peopleCount">Liczba osób</label><select id="peopleCount"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-  <div class="field"><label for="daysCount">Liczba dni</label><select id="daysCount"><option value="1">1 dzień</option><option value="3">3 dni</option><option value="7" selected>7 dni</option><option value="14">14 dni</option></select></div>
-  <div class="field"><label for="mealsCount">Posiłki dziennie</label><select id="mealsCount"><option value="3">3 posiłki</option><option value="4" selected>4 posiłki</option><option value="5">5 posiłków</option></select></div>
+  <div class="field">
+   <label for="planningMode">Tryb planowania</label>
+   <select id="planningMode">
+    <option value="full">Pełny jadłospis — wszystkie posiłki</option>
+    <option value="selected">Tylko wybrane rodzaje posiłków</option>
+   </select>
+  </div>
+
+  <div class="field">
+   <label for="peopleCount">Liczba osób</label>
+   <select id="peopleCount">
+    <option>1</option><option>2</option><option>3</option><option>4</option>
+    <option>5</option><option>6</option><option>7</option><option>8</option>
+   </select>
+  </div>
+
+  <div class="field">
+   <label for="daysCount">Liczba dni</label>
+   <select id="daysCount">
+    <option value="1">1 dzień</option>
+    <option value="3">3 dni</option>
+    <option value="5">5 dni</option>
+    <option value="7" selected>7 dni</option>
+    <option value="14">14 dni</option>
+   </select>
+  </div>
+
+  <div class="field" id="mealsCountField">
+   <label for="mealsCount">Posiłki dziennie</label>
+   <select id="mealsCount">
+    <option value="3">3 posiłki</option>
+    <option value="4" selected>4 posiłki</option>
+    <option value="5">5 posiłków</option>
+   </select>
+  </div>
+ </div>
+
+ <div id="selectedMealsBox" class="hidden" style="margin-top:20px">
+  <h3>Jakie posiłki chcesz zaplanować?</h3>
+  <p class="muted">Zaznacz jeden lub kilka rodzajów posiłków. Pozostałe nie zostaną uwzględnione w jadłospisie ani na liście zakupów.</p>
+  <div class="checks">
+   <label class="check"><input type="checkbox" name="selectedMeal" value="Śniadanie"> Śniadanie</label>
+   <label class="check"><input type="checkbox" name="selectedMeal" value="Drugie śniadanie"> Drugie śniadanie</label>
+   <label class="check"><input type="checkbox" name="selectedMeal" value="Obiad"> Obiad</label>
+   <label class="check"><input type="checkbox" name="selectedMeal" value="Podwieczorek"> Podwieczorek</label>
+   <label class="check"><input type="checkbox" name="selectedMeal" value="Kolacja"> Kolacja</label>
+  </div>
  </div>
 </section>
 
@@ -156,7 +202,6 @@ const raw=[
 ];
 
 let recipes=raw.map((r,i)=>({id:i+1,type:r[0],name:r[1],diet:r[2],ingredients:r[3],tags:r[4],kcal:r[5],p:r[6],c:r[7],f:r[8],steps:r[9],glutenFree:true}));
-/* Dodatkowe warianty bez glutenu. Nie dodajemy do nich składników z glutenem. */
 const extras=[
  ["z bazylią","bazylia",1,[]],["z koperkiem","koperek",2,[]],
  ["z natką pietruszki","natka pietruszki",2,[]],["z sokiem z cytryny","sok z cytryny",5,[]],
@@ -181,8 +226,8 @@ const units={
 };
 const unitFor=n=>units[n]||"g";
 function makePerson(i){return {...peopleSeed(),name:"Osoba "+i};}
+function macroInput(label,field,value){return `<div class="field"><label>${label}</label><input type="number" min="0" data-field="${field}" value="${value}"></div>`;}
 function personForm(p,i){
- const ck=v=>p.mode===v?"checked":"";
  return `<div class="person" data-person="${i}">
  <div class="person-title"><h3>Osoba ${i+1}</h3><span class="muted">Indywidualny cel</span></div>
  <div class="grid">
@@ -194,13 +239,12 @@ function personForm(p,i){
  <div class="field"><label>Wariant wzoru</label><select data-field="sex"><option value="female" ${p.sex==="female"?"selected":""}>Kobieta</option><option value="male" ${p.sex==="male"?"selected":""}>Mężczyzna</option></select></div>
  <div class="field"><label>Masa ciała (kg)</label><input type="number" min="30" max="300" step=".1" data-field="weight" value="${p.weight}"></div>
  <div class="field"><label>Wzrost (cm)</label><input type="number" min="120" max="230" data-field="height" value="${p.height}"></div>
- <div class="field"><label>Aktywność</label><select data-field="activity"><option value="1.2">Niska</option><option value="1.4" selected>Lekka</option><option value="1.6">Umiarkowana</option><option value="1.8">Wysoka</option></select></div>
+ <div class="field"><label>Aktywność</label><select data-field="activity"><option value="1.2">Niska</option><option value="1.4" ${Number(p.activity)===1.4?"selected":""}>Lekka</option><option value="1.6" ${Number(p.activity)===1.6?"selected":""}>Umiarkowana</option><option value="1.8" ${Number(p.activity)===1.8?"selected":""}>Wysoka</option></select></div>
  </div>
  <div class="macro-grid">
  ${macroInput("Kalorie (kcal/dzień)","kcal",p.kcal)}${macroInput("Białko (g/dzień)","protein",p.protein)}${macroInput("Węglowodany (g/dzień)","carbs",p.carbs)}${macroInput("Tłuszcze (g/dzień)","fat",p.fat)}
  </div><p class="muted">Wartości możesz edytować ręcznie.</p><div class="person-status"></div></div>`;
 }
-function macroInput(label,field,value){return `<div class="field"><label>${label}</label><input type="number" min="0" data-field="${field}" value="${value}"></div>`;}
 function renderPeople(){
  const n=Number($("peopleCount").value);
  while(people.length<n)people.push(makePerson(people.length+1));
@@ -256,14 +300,44 @@ function pickRecipe(type,day,slot,used){
  let available=list.filter(r=>!used.has(r.id));if(!available.length)available=list;
  const r=available[(day*7+slot*3)%available.length];used.add(r.id);return r;
 }
+function updatePlanningMode(){
+ const selected=$("planningMode").value==="selected";
+ $("selectedMealsBox").classList.toggle("hidden",!selected);
+ $("mealsCountField").classList.toggle("hidden",selected);
+}
 function generatePlan(){
- $("errors").innerHTML="";readPeople();
- if(!people.length){$("errors").innerHTML='<div class="notice">Dodaj przynajmniej jedną osobę.</div>';return;}
- if(people.some(p=>["kcal","protein","carbs","fat"].some(k=>p[k]===""||!Number.isFinite(Number(p[k]))||Number(p[k])<0))){$("errors").innerHTML='<div class="notice">Uzupełnij prawidłowe, nieujemne wartości kalorii i makro dla każdej osoby.</div>';return;}
+ $("errors").innerHTML="";
+ readPeople();
+
+ if(!people.length){
+  $("errors").innerHTML='<div class="notice">Dodaj przynajmniej jedną osobę.</div>';
+  return;
+ }
+ if(people.some(p=>["kcal","protein","carbs","fat"].some(k=>p[k]===""||!Number.isFinite(Number(p[k]))||Number(p[k])<0))){
+  $("errors").innerHTML='<div class="notice">Uzupełnij prawidłowe, nieujemne wartości kalorii i makro dla każdej osoby.</div>';
+  return;
+ }
+
+ const days=Number($("daysCount").value);
+ const mode=$("planningMode").value;
+ let chosen;
+
+ if(mode==="selected"){
+  chosen=[...document.querySelectorAll('input[name="selectedMeal"]:checked')].map(x=>x.value);
+  if(!chosen.length){
+   $("errors").innerHTML='<div class="notice">Zaznacz przynajmniej jeden rodzaj posiłku.</div>';
+   return;
+  }
+ }else{
+  const meals=Number($("mealsCount").value);
+  chosen=meals===3?["Śniadanie","Obiad","Kolacja"]:meals===4?["Śniadanie","Obiad","Podwieczorek","Kolacja"]:types;
+ }
+
  renderMacroSummary();
- const days=Number($("daysCount").value),meals=Number($("mealsCount").value);
- const chosen=meals===3?["Śniadanie","Obiad","Kolacja"]:meals===4?["Śniadanie","Obiad","Podwieczorek","Kolacja"]:types;
- const used=new Set();currentPlan=[];const missing=new Map();
+ const used=new Set();
+ currentPlan=[];
+ const missing=new Map();
+
  for(let d=0;d<days;d++){
   const dayMeals=[];
   chosen.forEach((type,s)=>{
@@ -273,12 +347,16 @@ function generatePlan(){
   });
   currentPlan.push({day:d+1,meals:dayMeals});
  }
+
  if(missing.size){
   $("errors").innerHTML='<div class="notice"><strong>Nie znaleziono dania dla wszystkich posiłków.</strong> Brak opcji: '+[...missing].map(([t,n])=>esc(t)+" ("+n+" razy)").join(", ")+'. Zmień filtry lub usuń część wykluczeń. Generator nie zastępuje bezpiecznej weryfikacji alergii.</div>';
  }else{
-  $("errors").innerHTML='<div class="success">Utworzono jadłospis. Wszystkie dobrane przepisy przeszły ustawione filtry — sprawdź jeszcze etykiety produktów i skład.</div>';
+  $("errors").innerHTML='<div class="success">Utworzono jadłospis. Lista zakupów zawiera składniki tylko z zaplanowanych posiłków. Sprawdź jeszcze etykiety produktów i skład.</div>';
  }
- renderGroupStats();renderPlan();renderShopping();
+
+ renderGroupStats();
+ renderPlan();
+ renderShopping();
  ["summarySection","planSection","shoppingSection"].forEach(id=>$(id).classList.remove("hidden"));
 }
 function renderGroupStats(){
@@ -293,6 +371,7 @@ function renderPlan(){
  <p class="muted">Cała grupa: ok. ${r.kcal*people.length} kcal</p><strong>Składniki dla ${people.length} ${people.length===1?"osoby":"osób"}:</strong>
  <ul class="ingredient-list">${r.ingredients.map(([n,a])=>`<li>${esc(n)}: ${fmt(a*people.length)} ${esc(unitFor(n))}</li>`).join("")}</ul><p>${esc(r.steps)}</p>
  </article>`).join("")}</div>`).join("");
+
  $("mealPlan").querySelectorAll("[data-swap]").forEach(btn=>btn.addEventListener("click",()=>{
   const d=Number(btn.dataset.day),s=Number(btn.dataset.slot),current=currentPlan[d-1]?.meals.find(m=>m.slot===s);
   if(!current)return;
@@ -300,17 +379,20 @@ function renderPlan(){
   if(!options.length){alert("Brak alternatywnych dań zgodnych z aktualnymi filtrami.");return;}
   const next=options[Math.floor(Math.random()*options.length)];
   currentPlan[d-1].meals=currentPlan[d-1].meals.map(m=>m.slot===s?{...next,day:d,slot:s}:m);
-  renderPlan();renderShopping();
+  renderPlan();
+  renderShopping();
  }));
 }
 function renderShopping(){
  const totals=new Map();
  currentPlan.forEach(d=>d.meals.forEach(r=>r.ingredients.forEach(([n,a])=>{
-  const key=n+"|"+unitFor(n);totals.set(key,(totals.get(key)||0)+a*people.length);
+  const key=n+"|"+unitFor(n);
+  totals.set(key,(totals.get(key)||0)+a*people.length);
  })));
  const items=[...totals.entries()].sort((a,b)=>a[0].localeCompare(b[0],"pl"));
- $("shoppingList").innerHTML=items.map(([key,amount],i)=>{
-  const [name,unit]=key.split("|");return `<label class="shopping-item"><input type="checkbox"><span>${esc(name)} — <strong>${fmt(amount)} ${esc(unit)}</strong></span></label>`;
+ $("shoppingList").innerHTML=items.map(([key,amount])=>{
+  const [name,unit]=key.split("|");
+  return `<label class="shopping-item"><input type="checkbox"><span>${esc(name)} — <strong>${fmt(amount)} ${esc(unit)}</strong></span></label>`;
  }).join("")||"<p>Brak składników.</p>";
 }
 async function copyShopping(){
@@ -319,25 +401,31 @@ async function copyShopping(){
  catch(e){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();alert("Skopiowano listę zakupów.");}
 }
 $("contactForm").addEventListener("submit",e=>{
- e.preventDefault();const name=$("contactName").value.trim(),email=$("contactEmail").value.trim(),message=$("contactMessage").value.trim();
+ e.preventDefault();
+ const name=$("contactName").value.trim(),email=$("contactEmail").value.trim(),message=$("contactMessage").value.trim();
  if(!message){$("contactStatus").textContent="Wpisz treść wiadomości.";return;}
  const body=[name?"Imię: "+name:"",email?"Adres zwrotny: "+email:"",message].filter(Boolean).join("\n\n");
  $("contactStatus").textContent="Otwieram aplikację pocztową…";
  location.href="mailto:kontakt@alergoplan.pl?subject="+encodeURIComponent("Wiadomość ze strony AlergoPlan")+"&body="+encodeURIComponent(body);
 });
+$("planningMode").addEventListener("change",updatePlanningMode);
 $("peopleCount").addEventListener("change",renderPeople);
 $("rebuildPeople").addEventListener("click",()=>{readPeople();renderPeople();});
 $("calculateAll").addEventListener("click",()=>{
- readPeople();const failed=[];
+ readPeople();
+ const failed=[];
  people.forEach((p,i)=>{if(p.mode==="calculate"&&!calculatePerson(i))failed.push(i+1);});
- renderPeople();renderMacroSummary();
+ renderPeople();
+ renderMacroSummary();
  if(failed.length)$("errors").innerHTML='<div class="notice">Sprawdź wiek, masę i wzrost osób: '+failed.join(", ")+'.</div>';
  else $("errors").innerHTML='<div class="success">Obliczono wybrane cele dla dorosłych. Wartości są orientacyjne.</div>';
 });
 $("generate").addEventListener("click",generatePlan);
 $("printPlan").addEventListener("click",()=>window.print());
 $("copyShopping").addEventListener("click",copyShopping);
+
 renderPeople();
+updatePlanningMode();
 </script>
 </body>
 </html>
