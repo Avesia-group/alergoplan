@@ -1,0 +1,630 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlergoPlan | Smart Meal Planner</title>
+<style>
+:root {
+  --bg:#f5f7f2; --card:#fff; --text:#233329; --muted:#6c7b70;
+  --green:#27734d; --green2:#e3f2e8; --border:#dfe7df;
+  --orange:#fff0dc; --red:#a33232; --shadow:0 8px 28px #263d2c0b;
+}
+* { box-sizing:border-box }
+body { margin:0; background:var(--bg); color:var(--text);
+  font-family:Inter,system-ui,-apple-system,sans-serif; line-height:1.5 }
+header { background:#173e2b; color:white; padding:28px 20px }
+header .inner, main { max-width:1100px; margin:auto }
+header h1 { margin:0 0 5px; font-size:clamp(27px,5vw,40px) }
+header p { margin:0; color:#d7e8db }
+main { padding:22px 16px 60px }
+h2 { font-size:21px; margin:0 0 14px }
+h3 { font-size:16px; margin:0 0 12px }
+section,.person,.meal,.day,.result-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:20px; margin-bottom:16px;
+  box-shadow:var(--shadow)
+}
+.section-head { display:flex; gap:12px; align-items:center; margin-bottom:16px }
+.step { display:grid; place-items:center; width:34px;height:34px;
+  border-radius:11px; background:var(--green2); color:var(--green); font-weight:800 }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:13px }
+label { display:block; font-size:13px; font-weight:700; margin-bottom:6px }
+input,select,textarea { width:100%; padding:11px 12px; border:1px solid #cfdacf;
+  border-radius:10px; font:inherit; color:var(--text); background:white; min-width:0 }
+input:focus,select:focus { outline:2px solid #93c9a6; border-color:var(--green) }
+small,.muted { color:var(--muted); font-size:12px }
+.field { min-width:0 }
+.checks { display:flex; flex-wrap:wrap; gap:9px; margin-top:8px }
+.check { display:flex; gap:7px; align-items:center; border:1px solid var(--border);
+  padding:8px 11px; border-radius:10px; font-size:13px; background:#fff }
+.check input { width:auto; margin:0 }
+button { border:0; border-radius:11px; padding:11px 15px; cursor:pointer;
+  font:inherit; font-weight:750; background:var(--green); color:white }
+button:hover { filter:brightness(.95) }
+button.secondary { background:var(--green2); color:var(--green) }
+button.danger { background:#fff0f0; color:var(--red) }
+button:disabled { opacity:.45; cursor:not-allowed }
+.actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:15px }
+.person { border-left:4px solid #6aa77b; box-shadow:none; margin-bottom:12px }
+.person-title { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px }
+.person-title h3 { margin:0 }
+.mode { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 16px }
+.mode label { display:flex; gap:7px; align-items:center; padding:9px 12px;
+  border:1px solid var(--border); border-radius:10px; cursor:pointer }
+.mode input { width:auto }
+.macro-grid { display:grid; grid-template-columns:repeat(4,minmax(100px,1fr)); gap:10px; margin-top:12px }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:10px }
+.stat { background:#f0f6f0; border-radius:12px; padding:13px }
+.stat strong { display:block; font-size:22px; color:var(--green) }
+.stat span { font-size:12px; color:var(--muted) }
+.notice { padding:12px 14px; background:var(--orange); border-radius:10px;
+  font-size:13px; margin:12px 0 }
+.success { padding:12px 14px; background:var(--green2); border-radius:10px; font-size:13px }
+.hidden { display:none!important }
+.day { padding:16px }
+.day h3 { border-bottom:1px solid var(--border); padding-bottom:10px }
+.meal { box-shadow:none; background:#fbfcfa; padding:14px; margin:10px 0 }
+.meal-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start }
+.meal h4 { margin:0 0 5px; font-size:16px }
+.pills { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 }
+.pill { background:#eaf3eb; color:#28583a; padding:4px 8px; border-radius:7px; font-size:11px }
+.ingredient-list { font-size:13px; padding-left:20px }
+.shopping-item { display:flex; align-items:center; gap:9px; padding:9px 0;
+  border-bottom:1px solid var(--border) }
+.shopping-item input { width:auto }
+.shopping-item:has(input:checked) span { text-decoration:line-through; color:var(--muted) }
+footer { color:var(--muted); font-size:12px; text-align:center; padding:20px }
+@media(max-width:600px) {
+  section { padding:15px }
+  .macro-grid { grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .meal-head { flex-direction:column }
+}
+@media print {
+  header { background:white; color:black; padding:10px }
+  header p, #setup, #peopleSection, #preferences, #generateSection,
+  .actions, .no-print, footer { display:none!important }
+  body { background:white }
+  main { padding:0 }
+  .day,.meal,section { break-inside:avoid; box-shadow:none }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>🥗 AlergoPlan</h1>
+    <p>Indywidualne potrzeby. Jeden wspólny plan posiłków.</p>
+  </div>
+</header>
+
+<main>
+<section id="setup">
+  <div class="section-head"><div class="step">1</div><h2>Ustawienia jadłospisu</h2></div>
+  <div class="grid">
+    <div class="field">
+      <label for="peopleCount">Liczba osób</label>
+      <select id="peopleCount">
+        <option>1</option><option>2</option><option>3</option><option>4</option>
+        <option>5</option><option>6</option><option>7</option><option>8</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="daysCount">Liczba dni</label>
+      <select id="daysCount">
+        <option value="1">1 dzień</option><option value="3">3 dni</option>
+        <option value="7" selected>7 dni</option><option value="14">14 dni</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="mealsCount">Posiłki dziennie</label>
+      <select id="mealsCount">
+        <option value="3">3 posiłki</option><option value="4" selected>4 posiłki</option>
+        <option value="5">5 posiłków</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<section id="peopleSection">
+  <div class="section-head"><div class="step">2</div><h2>Makroskładniki każdej osoby</h2></div>
+  <p class="muted">Ustaw zapotrzebowanie osobno dla każdej osoby. Możesz obliczyć je na podstawie danych lub wpisać własne wartości. Plan grupowy zsumuje cele wszystkich osób.</p>
+  <div class="notice">Obliczenia są orientacyjne. Wzór nie jest odpowiedni dla każdej osoby, szczególnie dzieci, nastolatków, osób w ciąży i osób ze szczególnymi potrzebami zdrowotnymi. W takich przypadkach cel warto ustalić z dietetykiem.</div>
+  <div id="peopleForms"></div>
+  <div class="actions">
+    <button id="rebuildPeople" type="button" class="secondary">Zastosuj liczbę osób</button>
+    <button id="calculateAll" type="button">Oblicz wszystkie osoby</button>
+  </div>
+  <div id="macroSummary" class="result-card hidden"></div>
+</section>
+
+<section id="preferences">
+  <div class="section-head"><div class="step">3</div><h2>Preferencje i wykluczenia</h2></div>
+  <div class="grid">
+    <div class="field">
+      <label for="diet">Rodzaj diety</label>
+      <select id="diet">
+        <option value="all">Bez dodatkowych ograniczeń</option>
+        <option value="vegetarian">Wegetariańska</option>
+        <option value="vegan">Wegańska</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="goal">Cel planu</label>
+      <select id="goal">
+        <option value="balanced">Zbilansowana dieta</option>
+        <option value="protein">Więcej białka</option>
+        <option value="simple">Proste posiłki</option>
+      </select>
+    </div>
+  </div>
+  <h3 style="margin-top:18px">Wyklucz alergeny lub składniki</h3>
+  <div class="checks">
+    <label class="check"><input type="checkbox" name="allergen" value="mleko"> Mleko</label>
+    <label class="check"><input type="checkbox" name="allergen" value="gluten"> Gluten</label>
+    <label class="check"><input type="checkbox" name="allergen" value="jajka"> Jajka</label>
+    <label class="check"><input type="checkbox" name="allergen" value="orzechy"> Orzechy</label>
+    <label class="check"><input type="checkbox" name="allergen" value="soja"> Soja</label>
+    <label class="check"><input type="checkbox" name="allergen" value="ryby"> Ryby</label>
+    <label class="check"><input type="checkbox" name="allergen" value="sezam"> Sezam</label>
+    <label class="check"><input type="checkbox" name="allergen" value="mięso"> Mięso</label>
+  </div>
+  <div class="field" style="margin-top:15px">
+    <label for="excludeText">Dodatkowe składniki do wykluczenia (oddziel przecinkami)</label>
+    <input id="excludeText" placeholder="np. pieczarki, oliwki, krewetki">
+  </div>
+  <p class="muted">Ważne: to przykładowy generator, a nie system gwarantujący bezpieczeństwo alergiczne. Sprawdzaj etykiety, możliwe śladowe ilości i ryzyko zanieczyszczenia krzyżowego.</p>
+</section>
+
+<section id="generateSection">
+  <div class="section-head"><div class="step">4</div><h2>Generowanie jadłospisu</h2></div>
+  <p class="muted">Dzienny cel grupowy to suma dziennych celów osób. Posiłki pokazują orientacyjne wartości na osobę oraz szacunkowe ilości dla całej grupy.</p>
+  <div class="actions">
+    <button id="generate" type="button">Wygeneruj jadłospis</button>
+    <button id="printPlan" type="button" class="secondary">Drukuj / zapisz PDF</button>
+  </div>
+  <div id="errors" role="status" aria-live="polite"></div>
+</section>
+
+<section id="summarySection" class="hidden">
+  <div class="section-head"><div class="step">✓</div><h2>Podsumowanie celów grupy</h2></div>
+  <div id="groupStats" class="stat-grid"></div>
+</section>
+
+<section id="planSection" class="hidden">
+  <div class="section-head"><div class="step">5</div><h2>Twój jadłospis</h2></div>
+  <div id="mealPlan"></div>
+</section>
+
+<section id="shoppingSection" class="hidden">
+  <div class="section-head"><div class="step">6</div><h2>Lista zakupów</h2></div>
+  <p class="muted">Ilości są szacunkowe i odpowiadają liczbie osób. Sprawdź, czy produkt jest zgodny z wymaganiami dietetycznymi i alergiami wszystkich domowników.</p>
+  <div id="shoppingList"></div>
+  <div class="actions no-print">
+    <button id="copyShopping" class="secondary" type="button">Kopiuj listę zakupów</button>
+  </div>
+</section>
+
+<footer>AlergoPlan — orientacyjne planowanie posiłków. Nie zastępuje porady lekarza ani dietetyka.</footer>
+</main>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const round = n => Math.round(Number(n) || 0);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+
+const defaultMacro = () => ({kcal:2000, protein:100, carbs:250, fat:67});
+
+function makePerson(i) {
+  return {
+    name: `Osoba ${i}`,
+    mode: "manual",
+    sex: "female",
+    age: 30,
+    weight: "",
+    height: "",
+    activity: 1.4,
+    kcal: 2000,
+    protein: 100,
+    carbs: 250,
+    fat: 67
+  };
+}
+let people = [makePerson(1)];
+let currentPlan = [];
+let shoppingText = "";
+
+const recipes = [
+ {id:1,type:"Śniadanie",name:"Owsianka z bananem i cynamonem",diet:"vegan",ingredients:[["płatki owsiane",60],["napój owsiany",200],["banan",1],["cynamon",1]],kcal:390,p:11,c:68,f:8,tags:["gluten"],steps:"Ugotuj płatki w napoju, dodaj pokrojonego banana i cynamon."},
+ {id:2,type:"Śniadanie",name:"Jajecznica z pomidorami",diet:"vegetarian",ingredients:[["jajka",2],["pomidor",1],["chleb pełnoziarnisty",2],["oliwa",5]],kcal:420,p:23,c:39,f:18,tags:["jajka","gluten"],steps:"Przygotuj jajecznicę na niewielkiej ilości oliwy. Podaj z pomidorem i pieczywem."},
+ {id:3,type:"Śniadanie",name:"Jogurt z owocami i płatkami",diet:"vegetarian",ingredients:[["jogurt naturalny",200],["płatki owsiane",40],["owoce jagodowe",100],["orzechy",10]],kcal:380,p:19,c:48,f:12,tags:["mleko","orzechy","gluten"],steps:"Wymieszaj składniki w misce."},
+ {id:4,type:"Śniadanie",name:"Tofucznica z pieczywem",diet:"vegan",ingredients:[["tofu",150],["pomidor",1],["chleb",2],["oliwa",5]],kcal:410,p:25,c:43,f:15,tags:["soja","gluten"],steps:"Rozgnieć tofu i podsmaż z pomidorem. Podaj z pieczywem."},
+ {id:5,type:"Drugie śniadanie",name:"Koktajl bananowo-jogurtowy",diet:"vegetarian",ingredients:[["jogurt naturalny",200],["banan",1],["płatki owsiane",20]],kcal:290,p:13,c:48,f:5,tags:["mleko","gluten"],steps:"Zblenduj składniki."},
+ {id:6,type:"Drugie śniadanie",name:"Jabłko i migdały",diet:"vegan",ingredients:[["jabłko",1],["migdały",25]],kcal:240,p:6,c:27,f:14,tags:["orzechy"],steps:"Umyj jabłko i podaj z migdałami."},
+ {id:7,type:"Drugie śniadanie",name:"Kanapki z hummusem",diet:"vegan",ingredients:[["chleb pełnoziarnisty",2],["hummus",50],["ogórek",1]],kcal:310,p:10,c:47,f:9,tags:["gluten","sezam"],steps:"Posmaruj pieczywo hummusem, dodaj ogórka."},
+ {id:8,type:"Drugie śniadanie",name:"Serek wiejski z owocami",diet:"vegetarian",ingredients:[["serek wiejski",200],["gruszka",1]],kcal:260,p:24,c:29,f:5,tags:["mleko"],steps:"Pokrój gruszkę i podaj z serkiem."},
+ {id:9,type:"Obiad",name:"Kurczak z ryżem i warzywami",diet:"all",ingredients:[["pierś kurczaka",160],["ryż suchy",75],["warzywa mieszane",200],["oliwa",10]],kcal:610,p:43,c:72,f:14,tags:[],steps:"Ugotuj ryż. Kurczaka usmaż lub upiecz, podaj z warzywami."},
+ {id:10,type:"Obiad",name:"Makaron z soczewicą i pomidorami",diet:"vegan",ingredients:[["makaron",85],["soczewica sucha",60],["passata pomidorowa",180],["oliwa",5]],kcal:590,p:25,c:96,f:10,tags:["gluten"],steps:"Ugotuj makaron i soczewicę. Wymieszaj z podgrzaną passatą."},
+ {id:11,type:"Obiad",name:"Łosoś z ziemniakami",diet:"all",ingredients:[["filet z łososia",150],["ziemniaki",250],["brokuł",180],["oliwa",5]],kcal:620,p:37,c:58,f:24,tags:["ryby"],steps:"Upiecz łososia, ugotuj ziemniaki i brokuły."},
+ {id:12,type:"Obiad",name:"Curry z ciecierzycą i ryżem",diet:"vegan",ingredients:[["ciecierzyca",150],["ryż suchy",70],["mleczko kokosowe",100],["szpinak",100]],kcal:600,p:19,c:88,f:19,tags:[],steps:"Podduś ciecierzycę ze szpinakiem i mleczkiem kokosowym. Podaj z ryżem."},
+ {id:13,type:"Obiad",name:"Kasza gryczana z tofu",diet:"vegan",ingredients:[["kasza gryczana sucha",75],["tofu",150],["papryka",100],["cukinia",100],["oliwa",5]],kcal:560,p:29,c:68,f:17,tags:["soja"],steps:"Ugotuj kaszę, tofu i warzywa podsmaż na patelni."},
+ {id:14,type:"Obiad",name:"Chili sin carne",diet:"vegan",ingredients:[["fasola czerwona",150],["kukurydza",60],["passata pomidorowa",200],["ryż suchy",65]],kcal:570,p:21,c:99,f:7,tags:[],steps:"Podgrzej fasolę z kukurydzą i passatą. Podaj z ryżem."},
+ {id:15,type:"Podwieczorek",name:"Marchewki z hummusem",diet:"vegan",ingredients:[["marchew",150],["hummus",50]],kcal:210,p:6,c:26,f:10,tags:["sezam"],steps:"Pokrój marchew w słupki i podaj z hummusem."},
+ {id:16,type:"Podwieczorek",name:"Jogurt z owocami",diet:"vegetarian",ingredients:[["jogurt naturalny",180],["owoce sezonowe",120]],kcal:190,p:10,c:29,f:4,tags:["mleko"],steps:"Wymieszaj jogurt z owocami."},
+ {id:17,type:"Podwieczorek",name:"Gruszka z pestkami dyni",diet:"vegan",ingredients:[["gruszka",1],["pestki dyni",20]],kcal:220,p:7,c:30,f:10,tags:[],steps:"Umyj gruszkę i podaj z pestkami."},
+ {id:18,type:"Podwieczorek",name:"Kanapka z pastą fasolową",diet:"vegan",ingredients:[["chleb",2],["biała fasola",80],["oliwa",3]],kcal:260,p:11,c:43,f:6,tags:["gluten"],steps:"Rozgnieć fasolę z oliwą i przyprawami, posmaruj pieczywo."},
+ {id:19,type:"Kolacja",name:"Sałatka z jajkiem",diet:"vegetarian",ingredients:[["jajka",2],["sałata",80],["pomidor",1],["chleb",1],["oliwa",5]],kcal:360,p:20,c:27,f:18,tags:["jajka","gluten"],steps:"Ugotuj jajka, pokrój warzywa i podaj z pieczywem."},
+ {id:20,type:"Kolacja",name:"Sałatka z ciecierzycą",diet:"vegan",ingredients:[["ciecierzyca",130],["ogórek",1],["pomidor",1],["sałata",60],["oliwa",5]],kcal:350,p:14,c:49,f:12,tags:[],steps:"Wymieszaj odsączoną ciecierzycę z pokrojonymi warzywami."},
+ {id:21,type:"Kolacja",name:"Kanapki z twarożkiem",diet:"vegetarian",ingredients:[["twaróg",100],["chleb pełnoziarnisty",2],["rzodkiewka",5],["ogórek",1]],kcal:340,p:23,c:42,f:8,tags:["mleko","gluten"],steps:"Rozgnieć twaróg, podaj z warzywami i pieczywem."},
+ {id:22,type:"Kolacja",name:"Wrap z fasolą i warzywami",diet:"vegan",ingredients:[["tortilla",1],["fasola czerwona",100],["papryka",70],["sałata",40]],kcal:380,p:15,c:62,f:8,tags:["gluten"],steps:"Podgrzej fasolę, dodaj warzywa i zawiń w tortillę."}
+];
+
+const mealTypes = ["Śniadanie","Drugie śniadanie","Obiad","Podwieczorek","Kolacja"];
+const mealShares = {
+ "Śniadanie":.25,
+ "Drugie śniadanie":.10,
+ "Obiad":.35,
+ "Podwieczorek":.10,
+ "Kolacja":.20
+};
+
+function personForm(p,i) {
+  const checked = v => p.mode === v ? "checked" : "";
+  return `
+  <div class="person" data-person="${i}">
+    <div class="person-title"><h3>Osoba ${i+1}</h3><span class="muted">Indywidualny cel</span></div>
+    <div class="grid">
+      <div class="field"><label>Imię lub etykieta</label>
+        <input data-field="name" value="${esc(p.name)}" placeholder="np. Ania"></div>
+      <div class="field"><label>Metoda ustalania makro</label>
+        <select data-field="mode">
+          <option value="manual" ${p.mode==="manual"?"selected":""}>Wpisuję ręcznie</option>
+          <option value="calculate" ${p.mode==="calculate"?"selected":""}>Oblicz na podstawie danych</option>
+        </select></div>
+    </div>
+    <div class="mode">
+      <label><input type="radio" data-field="modeRadio" value="manual" ${checked("manual")}> Ręcznie</label>
+      <label><input type="radio" data-field="modeRadio" value="calculate" ${checked("calculate")}> Oblicz zapotrzebowanie</label>
+    </div>
+    <div class="calc-fields ${p.mode==="calculate"?"":"hidden"}">
+      <div class="grid">
+        <div class="field"><label>Wiek (lata) *</label><input type="number" min="18" max="100" data-field="age" value="${p.age}"></div>
+        <div class="field"><label>Wariant wzoru</label>
+          <select data-field="sex">
+            <option value="female" ${p.sex==="female"?"selected":""}>Kobieta</option>
+            <option value="male" ${p.sex==="male"?"selected":""}>Mężczyzna</option>
+          </select></div>
+        <div class="field"><label>Masa ciała (kg) *</label><input type="number" min="30" max="300" step="0.1" data-field="weight" value="${p.weight}" placeholder="Wymagane"></div>
+        <div class="field"><label>Wzrost (cm) *</label><input type="number" min="120" max="230" data-field="height" value="${p.height}" placeholder="Wymagane"></div>
+        <div class="field"><label>Aktywność</label>
+          <select data-field="activity">
+            <option value="1.2" ${p.activity==1.2?"selected":""}>Niska</option>
+            <option value="1.4" ${p.activity==1.4?"selected":""}>Lekka</option>
+            <option value="1.6" ${p.activity==1.6?"selected":""}>Umiarkowana</option>
+            <option value="1.8" ${p.activity==1.8?"selected":""}>Wysoka</option>
+          </select></div>
+      </div>
+      <p class="muted">Masa ciała i wzrost są wymagane. Obliczenie używa wzoru Mifflina–St Jeora i współczynnika aktywności.</p>
+      <button type="button" class="secondary calculate-one">Oblicz dla tej osoby</button>
+    </div>
+    <div class="macro-grid">
+      <div class="field"><label>Kalorie (kcal/dzień)</label><input type="number" min="0" max="10000" data-field="kcal" value="${p.kcal}"></div>
+      <div class="field"><label>Białko (g/dzień)</label><input type="number" min="0" max="1000" data-field="protein" value="${p.protein}"></div>
+      <div class="field"><label>Węglowodany (g/dzień)</label><input type="number" min="0" max="2000" data-field="carbs" value="${p.carbs}"></div>
+      <div class="field"><label>Tłuszcze (g/dzień)</label><input type="number" min="0" max="1000" data-field="fat" value="${p.fat}"></div>
+    </div>
+    <p class="muted">Wartości możesz edytować w dowolnym momencie, także po obliczeniu.</p>
+    <div class="person-status" aria-live="polite"></div>
+  </div>`;
+}
+
+function renderPeople() {
+  const count = Number($("peopleCount").value);
+  while (people.length < count) people.push(makePerson(people.length+1));
+  people = people.slice(0,count);
+  $("peopleForms").innerHTML = people.map(personForm).join("");
+  $("macroSummary").classList.add("hidden");
+
+  $("peopleForms").querySelectorAll(".person").forEach((el,i) => {
+    el.querySelectorAll("[data-field]").forEach(input => {
+      input.addEventListener("change", () => {
+        const field = input.dataset.field;
+        if (field === "modeRadio") return;
+        updatePerson(i,field,input.value);
+        if (field === "mode") renderPeople();
+      });
+      input.addEventListener("input", () => {
+        const field = input.dataset.field;
+        if (["name","kcal","protein","carbs","fat","weight","height","age"].includes(field)) {
+          updatePerson(i,field,input.value);
+        }
+      });
+    });
+    el.querySelectorAll('[data-field="modeRadio"]').forEach(radio => {
+      radio.addEventListener("change", () => {
+        updatePerson(i,"mode",radio.value);
+        renderPeople();
+      });
+    });
+    el.querySelector(".calculate-one").addEventListener("click", () => {
+      readPersonForm(el,i);
+      calculatePerson(i);
+    });
+  });
+}
+
+function updatePerson(i,field,value) {
+  if (!people[i]) return;
+  if (["age","weight","height","activity","kcal","protein","carbs","fat"].includes(field)) {
+    people[i][field] = value === "" ? "" : Number(value);
+  } else {
+    people[i][field] = value;
+  }
+}
+function readPersonForm(el,i) {
+  el.querySelectorAll("[data-field]").forEach(input => {
+    const field=input.dataset.field;
+    if (field === "modeRadio") return;
+    updatePerson(i,field,input.value);
+  });
+}
+function readAllForms() {
+  document.querySelectorAll(".person").forEach((el,i) => readPersonForm(el,i));
+}
+
+function calculatePerson(i) {
+  const p=people[i];
+  const el=document.querySelectorAll(".person")[i];
+  if (!p || !el) return;
+  const weight=Number(p.weight), height=Number(p.height), age=Number(p.age);
+  if (!(weight>=30 && weight<=300) || !(height>=120 && height<=230) || !(age>=18 && age<=100)) {
+    el.querySelector(".person-status").innerHTML =
+      '<div class="notice">Uzupełnij poprawnie wymagane pola: wiek, masa ciała i wzrost. Wzór przeznaczony jest dla dorosłych.</div>';
+    return false;
+  }
+  const bmr = 10*weight + 6.25*height - 5*age + (p.sex==="male" ? 5 : -161);
+  const kcal = Math.round(bmr*Number(p.activity));
+  // Wartości początkowe to orientacyjny podział energii 20% / 50% / 30%.
+  p.kcal=kcal;
+  p.protein=Math.round(kcal*.20/4);
+  p.carbs=Math.round(kcal*.50/4);
+  p.fat=Math.round(kcal*.30/9);
+  renderPeople();
+  const refreshed=document.querySelectorAll(".person")[i];
+  refreshed.querySelector(".person-status").innerHTML =
+    `<div class="success">Obliczono orientacyjne zapotrzebowanie: <strong>${p.kcal} kcal/dzień</strong>. Możesz teraz edytować dowolną wartość.</div>`;
+  return true;
+}
+
+function calculateAll() {
+  readAllForms();
+  let failed=[];
+  people.forEach((p,i) => {
+    if (p.mode==="calculate" && !calculatePerson(i)) failed.push(p.name || `Osoba ${i+1}`);
+  });
+  if (failed.length) {
+    $("errors").innerHTML=`<div class="notice">Nie udało się obliczyć makro dla: ${failed.map(esc).join(", ")}. Uzupełnij wiek, masę ciała i wzrost.</div>`;
+    return false;
+  }
+  readAllForms();
+  renderMacroSummary();
+  return true;
+}
+
+function renderMacroSummary() {
+  const totals=people.reduce((a,p) => {
+    a.kcal+=Number(p.kcal)||0; a.protein+=Number(p.protein)||0;
+    a.carbs+=Number(p.carbs)||0; a.fat+=Number(p.fat)||0;
+    return a;
+  },{kcal:0,protein:0,carbs:0,fat:0});
+  $("macroSummary").classList.remove("hidden");
+  $("macroSummary").innerHTML=`
+    <h3>Łączne cele wszystkich osób</h3>
+    <div class="stat-grid">
+      ${stat("Kalorie",round(totals.kcal),"kcal / dzień")}
+      ${stat("Białko",round(totals.protein),"g / dzień")}
+      ${stat("Węglowodany",round(totals.carbs),"g / dzień")}
+      ${stat("Tłuszcze",round(totals.fat),"g / dzień")}
+    </div>`;
+}
+function stat(label,value,unit) {
+  return `<div class="stat"><span>${label}</span><strong>${value}</strong><span>${unit}</span></div>`;
+}
+
+function selectedAllergens() {
+  return [...document.querySelectorAll('input[name="allergen"]:checked')].map(e=>e.value);
+}
+function excludedWords() {
+  return $("excludeText").value.split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
+}
+function recipeAllowed(r) {
+  const diet=$("diet").value;
+  if (diet==="vegan" && !["vegan"].includes(r.diet)) return false;
+  if (diet==="vegetarian" && r.diet==="all") {
+    // Dania oznaczone "all" mogą zawierać mięso lub ryby.
+    if (r.ingredients.some(x=>/kurczak|łosoś|wołow|wieprz|indyk|mięso|ryb/i.test(x[0]))) return false;
+  }
+  if (diet==="vegetarian" && r.diet==="all" && r.tags.includes("ryby")) return false;
+  const allergies=selectedAllergens();
+  if (allergies.some(a=>r.tags.includes(a))) return false;
+  if (allergies.includes("mięso") &&
+      r.ingredients.some(x=>/kurczak|łosoś|wołow|wieprz|indyk|mięso/i.test(x[0]))) return false;
+  const words=excludedWords();
+  const text=(r.name+" "+r.ingredients.map(x=>x[0]).join(" ")).toLowerCase();
+  if (words.some(w=>text.includes(w))) return false;
+  return true;
+}
+function recipesFor(type) {
+  let list=recipes.filter(r=>r.type===type && recipeAllowed(r));
+  if ($("goal").value==="protein") list.sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal));
+  return list;
+}
+function pickRecipe(type,day,slot,used) {
+  let list=recipesFor(type);
+  if (!list.length) return null;
+  let available=list.filter(r=>!used.has(r.id));
+  if (!available.length) available=list;
+  const recipe=available[(day*7+slot*3)%available.length];
+  used.add(recipe.id);
+  return recipe;
+}
+
+function generatePlan() {
+  $("errors").innerHTML="";
+  readAllForms();
+  if (!people.length) {
+    $("errors").innerHTML='<div class="notice">Dodaj przynajmniej jedną osobę.</div>';
+    return;
+  }
+  const invalid=people.filter(p => {
+    const vals=[p.kcal,p.protein,p.carbs,p.fat];
+    return vals.some(v=>v==="" || !Number.isFinite(Number(v)) || Number(v)<0);
+  });
+  if (invalid.length) {
+    $("errors").innerHTML='<div class="notice">Uzupełnij prawidłowe, nieujemne wartości kalorii i makro dla każdej osoby.</div>';
+    return;
+  }
+  renderMacroSummary();
+
+  const days=Number($("daysCount").value);
+  const meals=Number($("mealsCount").value);
+  const types= meals===3 ? ["Śniadanie","Obiad","Kolacja"] :
+    meals===4 ? ["Śniadanie","Obiad","Podwieczorek","Kolacja"] :
+    mealTypes;
+  const used=new Set();
+  currentPlan=[];
+  let impossible=[];
+  for(let d=0;d<days;d++) {
+    const dayMeals=[];
+    types.forEach((type,s) => {
+      const recipe=pickRecipe(type,d,s,used);
+      if(recipe) dayMeals.push({...recipe,day:d+1,slot:s});
+      else impossible.push(type);
+    });
+    currentPlan.push({day:d+1,meals:dayMeals});
+  }
+  if (impossible.length) {
+    $("errors").innerHTML='<div class="notice">Niektórych posiłków nie udało się dobrać do wykluczeń. Zmień filtry, aby uzyskać więcej opcji.</div>';
+  }
+  renderGroupStats();
+  renderPlan();
+  renderShopping();
+  $("summarySection").classList.remove("hidden");
+  $("planSection").classList.remove("hidden");
+  $("shoppingSection").classList.remove("hidden");
+}
+
+function renderGroupStats() {
+  const t=people.reduce((a,p) => {
+    ["kcal","protein","carbs","fat"].forEach(k=>a[k]+=Number(p[k])||0);
+    return a;
+  },{kcal:0,protein:0,carbs:0,fat:0});
+  $("groupStats").innerHTML=
+    stat("Osoby",people.length,"w grupie")+
+    stat("Kalorie",round(t.kcal),"kcal / dzień")+
+    stat("Białko",round(t.protein),"g / dzień")+
+    stat("Węglowodany",round(t.carbs),"g / dzień")+
+    stat("Tłuszcze",round(t.fat),"g / dzień");
+}
+
+function renderPlan() {
+  const peopleCount=people.length;
+  const totalKcal=people.reduce((a,p)=>a+(Number(p.kcal)||0),0);
+  const dayTarget=totalKcal;
+  $("mealPlan").innerHTML=currentPlan.map(day=>{
+    const mealsHtml=day.meals.map(r=>{
+      const groupKcal=r.kcal*peopleCount;
+      const groupP=r.p*peopleCount;
+      const groupC=r.c*peopleCount;
+      const groupF=r.f*peopleCount;
+      const scaled=r.ingredients.map(([name,amount])=>`${esc(name)}: ${formatAmount(amount*peopleCount)}`);
+      return `<article class="meal">
+        <div class="meal-head">
+          <div><h4>${esc(r.name)}</h4><span class="muted">${esc(r.type)}</span></div>
+          <button type="button" class="secondary no-print" data-swap="${r.id}" data-day="${day.day}" data-slot="${r.slot}">Zamień danie</button>
+        </div>
+        <div class="pills">
+          <span class="pill">${r.kcal} kcal / osoba</span>
+          <span class="pill">B: ${r.p} g</span><span class="pill">W: ${r.c} g</span><span class="pill">T: ${r.f} g</span>
+        </div>
+        <p class="muted">Cała grupa: ok. ${groupKcal} kcal · B ${groupP} g · W ${groupC} g · T ${groupF} g</p>
+        <strong>Składniki na ${peopleCount} ${peopleCount===1?"osobę":"osoby"}:</strong>
+        <ul class="ingredient-list">${scaled.map(x=>`<li>${x}</li>`).join("")}</ul>
+        <p>${esc(r.steps)}</p>
+      </article>`;
+    }).join("");
+    return `<div class="day"><h3>Dzień ${day.day}</h3>${mealsHtml}</div>`;
+  }).join("");
+
+  $("mealPlan").querySelectorAll("[data-swap]").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const dayNum=Number(btn.dataset.day), slot=Number(btn.dataset.slot);
+      const current=currentPlan[dayNum-1]?.meals.find(m=>m.slot===slot);
+      if(!current) return;
+      const alternatives=recipesFor(current.type).filter(r=>r.id!==current.id);
+      if(!alternatives.length) {
+        alert("Brak alternatywnych dań zgodnych z aktualnymi filtrami.");
+        return;
+      }
+      const replacement=alternatives[Math.floor(Math.random()*alternatives.length)];
+      currentPlan[dayNum-1].meals=currentPlan[dayNum-1].meals.map(m=>
+        m.slot===slot ? {...replacement,day:dayNum,slot} : m);
+      renderPlan(); renderShopping();
+    });
+  });
+}
+function formatAmount(n) {
+  if(n===0) return "0";
+  if(Number.isInteger(n)) return String(n);
+  return String(Math.round(n*10)/10).replace(".",",");
+}
+
+function renderShopping() {
+  const totals=new Map();
+  currentPlan.forEach(day=>day.meals.forEach(r=>{
+    r.ingredients.forEach(([name,amount])=>{
+      const key=name.toLowerCase();
+      if(!totals.has(key)) totals.set(key,{name,amount:0});
+      totals.get(key).amount+=Number(amount)*people.length;
+    });
+  }));
+  const items=[...totals.values()].sort((a,b)=>a.name.localeCompare(b.name,"pl"));
+  shoppingText=items.map(x=>`${x.name}: ${formatAmount(x.amount)}`).join("\n");
+  $("shoppingList").innerHTML=items.map((x,i)=>`
+    <label class="shopping-item">
+      <input type="checkbox" data-shopping="${i}">
+      <span>${esc(x.name)} — ${formatAmount(x.amount)}</span>
+    </label>`).join("") || "<p>Brak składników do wyświetlenia.</p>";
+}
+function copyShopping() {
+  const text=[...$("shoppingList").querySelectorAll(".shopping-item")]
+    .map(el=>el.querySelector("span").textContent).join("\n");
+  if(navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(()=>alert("Skopiowano listę zakupów."))
+      .catch(()=>fallbackCopy(text));
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text) {
+  const ta=document.createElement("textarea");
+  ta.value=text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); alert("Skopiowano listę zakupów."); }
+  catch(e) { alert(text); }
+  ta.remove();
+}
+
+$("peopleCount").addEventListener("change",renderPeople);
+$("rebuildPeople").addEventListener("click",()=>{readAllForms();renderPeople();});
+$("calculateAll").addEventListener("click",calculateAll);
+$("generate").addEventListener("click",generatePlan);
+$("printPlan").addEventListener("click",()=>window.print());
+$("copyShopping").addEventListener("click",copyShopping);
+
+renderPeople();
+</script>
+</body>
+</html>
