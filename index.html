@@ -132,7 +132,7 @@ footer{text-align:center;padding:22px;color:#87948b;font-size:12px}
   </div>
   <div id="mealMacroTargets" style="margin-top:20px">
    <h3>Cele makro dla poszczególnych posiłków (opcjonalnie)</h3>
-   <p class="muted">Ustawienia dotyczą jednej porcji. Puste pola oznaczają brak celu. Generator będzie szukać przepisów najbliższych podanym wartościom.</p>
+   <p class="muted">Ustawienia dotyczą jednej porcji. Puste pola oznaczają brak celu. Generator dopasuje i przeskaluje przepisy do podanych wartości.</p>
    <div id="mealMacroTargetFields"></div>
   </div>
  </div>
@@ -190,7 +190,7 @@ footer{text-align:center;padding:22px;color:#87948b;font-size:12px}
 
 <section id="generateSection">
  <div class="section-head"><div class="step">4</div><h2>Generowanie jadłospisu</h2></div>
- <p class="muted">Baza zawiera 50 podstawowych przepisów bez glutenu — po 10 na każdy rodzaj posiłku. Składniki są podawane w ilościach orientacyjnych na osobę.</p>
+ <p class="muted">Baza zawiera 160 różnorodnych przepisów bez glutenu z bogatym wyborem dań wysokobiałkowych. Generator automatycznie skaluje wielkości porcji i składniki, aby suma kalorii i makro dokładnie pokrywała Twój cel.</p>
  <div class="actions">
   <button id="generate" type="button">Wygeneruj jadłospis</button>
   <button id="printPlan" class="secondary" type="button">Drukuj / zapisz PDF</button>
@@ -208,7 +208,7 @@ footer{text-align:center;padding:22px;color:#87948b;font-size:12px}
 </section>
 <section id="shoppingSection" class="hidden">
  <div class="section-head"><div class="step">6</div><h2>Lista zakupów</h2></div>
- <p class="muted">Ilości są szacunkowe. Sprawdź, czy produkty są zgodne z wymaganiami wszystkich osób.</p>
+ <p class="muted">Ilości są przeliczone do pełnego zapotrzebowania kalorycznego dla całej grupy.</p>
  <div id="shoppingList"></div>
  <div class="actions no-print"><button id="copyShopping" class="secondary" type="button">Kopiuj listę zakupów</button></div>
 </section>
@@ -239,7 +239,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const round=n=>Math.round(Number(n)||0);
 const types=["Śniadanie","Drugie śniadanie","Obiad","Podwieczorek","Kolacja"];
-const peopleSeed=()=>({name:"",mode:"manual",sex:"female",age:30,weight:"",height:"",activity:1.4,kcal:2000,protein:100,carbs:250,fat:67});
+const peopleSeed=()=>({name:"",mode:"manual",sex:"female",age:30,weight:"",height:"",activity:1.4,kcal:2000,protein:120,carbs:230,fat:65});
 let people=[peopleSeed()],currentPlan=[];
 
 const mealMacroTargets={};
@@ -293,131 +293,203 @@ function hasMealTarget(type){
  );
 }
 
-function macroDistance(recipe,type){
- const target=mealMacroTargets[type]||{};
- const pairs=[["kcal","kcal"],["p","p"],["c","c"],["f","f"]];
- const distances=[];
-
- for(const [targetKey,recipeKey] of pairs){
-  if(target[targetKey]!==undefined&&target[targetKey]!==""&&
-     Number.isFinite(Number(target[targetKey]))&&Number(target[targetKey])>=0){
-   const wanted=Number(target[targetKey]);
-   const actual=Number(recipe[recipeKey])||0;
-   distances.push(Math.abs(actual-wanted)/Math.max(wanted,10));
+function macroDistance(recipe, target){
+ if(!target) return 0;
+ const pairs=[["kcal","kcal",1.0],["p","p",2.0],["c","c",0.8],["f","f",0.8]];
+ let totalDiff=0, count=0;
+ for(const [tKey, rKey, weight] of pairs){
+  if(target[tKey]!==undefined && target[tKey]!=="" && Number.isFinite(Number(target[tKey])) && Number(target[tKey])>0){
+   const wanted=Number(target[tKey]);
+   const actual=Number(recipe[rKey])||0;
+   const diff=Math.abs(actual-wanted)/wanted;
+   totalDiff += diff * weight;
+   count++;
   }
  }
- if(!distances.length)return Infinity;
- return distances.reduce((sum,value)=>sum+value,0)/distances.length;
+ return count ? (totalDiff/count) : 0;
 }
 
 const raw=[
-["Śniadanie","Jaglanka z jabłkiem i cynamonem","vegan",[["kasza jaglana",60],["jabłko",150],["napój ryżowy",200],["cynamon",1]],[],360,8,68,6,"Ugotuj kaszę w napoju. Podaj z jabłkiem i cynamonem."],
-["Śniadanie","Owsianka z bananem — płatki certyfikowane bez glutenu","vegan",[["płatki owsiane bezglutenowe",60],["napój ryżowy",200],["banan",100]],[],350,7,70,5,"Ugotuj płatki w napoju, dodaj banana."],
-["Śniadanie","Jajka z pomidorem i ziemniakami","vegetarian",[["jajka",2],["pomidor",120],["ziemniaki",150],["oliwa",5]],["jajka"],330,18,35,12,"Ugotuj ziemniaki i jajka. Podaj z pomidorem."],
-["Śniadanie","Komosa ryżowa z malinami","vegan",[["komosa ryżowa sucha",55],["maliny",100],["napój ryżowy",180]],[],320,9,58,5,"Ugotuj komosę, ostudź i podaj z malinami."],
-["Śniadanie","Omlet ze szpinakiem","vegetarian",[["jajka",2],["szpinak",50],["oliwa",5],["pomidor",100]],["jajka"],280,17,12,18,"Podsmaż szpinak, dodaj jajka i zetnij omlet."],
-["Śniadanie","Ryż na mleku kokosowym z gruszką","vegan",[["ryż suchy",55],["napój kokosowy",200],["gruszka",120]],[],350,5,68,7,"Ugotuj ryż w napoju kokosowym i dodaj gruszkę."],
-["Śniadanie","Tofucznica z papryką","vegan",[["tofu",150],["papryka",100],["oliwa",5]],["soja"],300,23,15,17,"Rozkrusz tofu, dodaj paprykę i podsmaż."],
-["Śniadanie","Placki bananowo-ryżowe","vegetarian",[["banan",100],["jajka",2],["mąka ryżowa",40],["olej",5]],["jajka"],370,14,48,13,"Zblenduj składniki i usmaż małe placki."],
-["Śniadanie","Kasza gryczana z pieczonym jabłkiem","vegan",[["kasza gryczana",60],["jabłko",150],["napój ryżowy",150]],[],330,8,64,4,"Ugotuj kaszę i podaj z upieczonym jabłkiem."],
-["Śniadanie","Pudding chia z bananem","vegan",[["nasiona chia",25],["napój ryżowy",200],["banan",100]],[],300,6,43,11,"Wymieszaj chia z napojem, schłodź i dodaj banana."],
-
-["Drugie śniadanie","Jogurt z borówkami","vegetarian",[["jogurt naturalny",180],["borówki",100]],["mleko"],180,10,25,4,"Wymieszaj jogurt z umytymi borówkami."],
-["Drugie śniadanie","Wafle ryżowe z awokado","vegan",[["wafle ryżowe",3],["awokado",60],["pomidor",80]],[],260,5,34,12,"Rozgnieć awokado, posmaruj wafle i dodaj pomidora."],
-["Drugie śniadanie","Koktajl kefir-malina-banan","vegetarian",[["kefir",200],["maliny",80],["banan",80]],["mleko"],230,9,38,4,"Zblenduj wszystkie składniki."],
-["Drugie śniadanie","Serek wiejski z ogórkiem","vegetarian",[["serek wiejski",180],["ogórek",100],["szczypiorek",5]],["mleko"],190,22,10,6,"Pokrój warzywa i wymieszaj z serkiem."],
-["Drugie śniadanie","Sałatka owocowa","vegan",[["jabłko",100],["gruszka",100],["truskawki",100]],[],160,2,39,1,"Pokrój owoce i wymieszaj."],
-["Drugie śniadanie","Hummus z marchewką","vegan",[["hummus",50],["marchew",150]],["sezam"],210,6,26,10,"Pokrój marchew w słupki i podaj z hummusem."],
-["Drugie śniadanie","Koktajl mango na napoju ryżowym","vegan",[["mango",120],["banan",70],["napój ryżowy",150]],[],210,2,49,2,"Zblenduj owoce z napojem ryżowym."],
-["Drugie śniadanie","Jajko i pomidorki","vegetarian",[["jajka",1],["pomidory koktajlowe",120],["ogórek",80]],["jajka"],150,8,12,7,"Ugotuj jajko i podaj z warzywami."],
-["Drugie śniadanie","Pudding ryżowy z malinami","vegan",[["ryż suchy",35],["napój kokosowy",150],["maliny",80]],[],230,4,45,4,"Ugotuj ryż w napoju i dodaj maliny."],
-["Drugie śniadanie","Pieczona ciecierzyca","vegan",[["ciecierzyca",120],["oliwa",4],["papryka słodka",2]],[],210,10,29,6,"Osusz ciecierzycę, wymieszaj z oliwą i przyprawami, upiecz."],
-
-["Obiad","Kurczak z ryżem i brokułami","all",[["pierś kurczaka",150],["ryż suchy",70],["brokuł",180],["oliwa",5]],[],560,42,67,10,"Ugotuj ryż i brokuły. Kurczaka upiecz lub usmaż."],
-["Obiad","Indyk z kaszą gryczaną","all",[["pierś indyka",150],["kasza gryczana",70],["cukinia",100],["marchew",100]],[],490,39,59,7,"Ugotuj kaszę, indyka upiecz, warzywa podduś."],
-["Obiad","Dorsz z ziemniakami","all",[["filet z dorsza",160],["ziemniaki",250],["fasolka szparagowa",150],["oliwa",5]],["ryby"],450,35,55,8,"Upiecz dorsza i ugotuj ziemniaki z fasolką."],
-["Obiad","Curry z ciecierzycą i ryżem","vegan",[["ciecierzyca",130],["ryż suchy",65],["mleczko kokosowe",100],["szpinak",80]],[],560,16,83,17,"Podduś ciecierzycę ze szpinakiem i mleczkiem kokosowym."],
-["Obiad","Gulasz z soczewicy z ryżem","vegan",[["soczewica sucha",65],["ryż suchy",60],["passata",180],["marchew",80]],[],520,22,88,5,"Ugotuj soczewicę z passatą i marchewką. Podaj z ryżem."],
-["Obiad","Łosoś z komosą ryżową","all",[["filet z łososia",140],["komosa ryżowa sucha",60],["cukinia",150]],["ryby"],550,34,48,20,"Upiecz łososia, ugotuj komosę i podduś cukinię."],
-["Obiad","Faszerowana papryka z ryżem i fasolą","vegan",[["papryka",180],["ryż suchy",55],["fasola czerwona",100],["passata",100]],[],470,14,83,5,"Paprykę napełnij ryżem, fasolą i passatą, a następnie upiecz."],
-["Obiad","Tofu z ryżem i warzywami","vegan",[["tofu",150],["ryż suchy",65],["cukinia",100],["papryka",100]],["soja"],510,25,63,14,"Podsmaż tofu z warzywami i podaj z ugotowanym ryżem."],
-["Obiad","Zupa z czerwonej soczewicy","vegan",[["soczewica sucha",65],["marchew",80],["passata",150],["ryż suchy",40]],[],450,20,75,4,"Ugotuj soczewicę i marchew w passacie z wodą; podaj z ryżem."],
-["Obiad","Pieczone warzywa z fetą i ziemniakami","vegetarian",[["ziemniaki",200],["cukinia",100],["papryka",100],["ser feta",35]],["mleko"],430,13,57,14,"Pokrój warzywa i ziemniaki, upiecz. Dodaj fetę."],
-
-["Podwieczorek","Pieczone jabłko z cynamonem","vegan",[["jabłko",180],["cynamon",1]],[],120,1,32,0,"Upiecz jabłko z cynamonem do miękkości."],
-["Podwieczorek","Jogurt z gruszką","vegetarian",[["jogurt naturalny",180],["gruszka",120]],["mleko"],190,9,29,4,"Pokrój gruszkę i wymieszaj z jogurtem."],
-["Podwieczorek","Wafle ryżowe z masłem orzechowym","vegan",[["wafle ryżowe",2],["masło orzechowe",15],["banan",50]],["orzechy"],220,5,32,9,"Posmaruj wafle masłem orzechowym i dodaj banana."],
-["Podwieczorek","Kremowa polenta z truskawkami","vegetarian",[["kaszka kukurydziana",35],["mleko",180],["truskawki",100]],["mleko"],250,9,43,5,"Ugotuj kaszkę na mleku i podaj z truskawkami."],
-["Podwieczorek","Mus jabłkowo-malinowy","vegan",[["jabłko",120],["maliny",100]],[],130,2,31,1,"Podduś owoce z odrobiną wody i zblenduj."],
-["Podwieczorek","Kuleczki daktylowo-kokosowe","vegan",[["daktyle",40],["wiórki kokosowe",15],["pestki słonecznika",10]],[],220,4,34,8,"Zblenduj daktyle, wymieszaj z dodatkami i uformuj kuleczki."],
-["Podwieczorek","Serek wiejski z brzoskwinią","vegetarian",[["serek wiejski",150],["brzoskwinia",120]],["mleko"],190,18,21,4,"Pokrój brzoskwinię i podaj z serkiem."],
-["Podwieczorek","Koktajl truskawkowo-bananowy","vegan",[["truskawki",120],["banan",100],["napój ryżowy",150]],[],200,3,45,2,"Zblenduj składniki na gładki koktajl."],
-["Podwieczorek","Gruszka z pestkami dyni","vegan",[["gruszka",150],["pestki dyni",15]],[],190,5,29,8,"Pokrój gruszkę i podaj z pestkami dyni."],
-["Podwieczorek","Pudding chia z kakao","vegan",[["nasiona chia",20],["napój ryżowy",180],["kakao",5],["banan",70]],[],240,5,36,9,"Wymieszaj chia, napój i kakao. Schłodź, podaj z bananem."],
-
-["Kolacja","Sałatka z komosą i ciecierzycą","vegan",[["komosa ryżowa sucha",50],["ciecierzyca",100],["ogórek",100],["pomidor",120],["oliwa",5]],[],430,15,62,12,"Ugotuj komosę, połącz z ciecierzycą i warzywami."],
-["Kolacja","Omlet z cukinią i pomidorem","vegetarian",[["jajka",2],["cukinia",100],["pomidor",100],["oliwa",5]],["jajka"],300,19,13,19,"Podsmaż warzywa, dodaj jajka i zetnij pod przykryciem."],
-["Kolacja","Sałatka z jajkiem i ziemniakami","vegetarian",[["jajka",2],["ziemniaki",180],["ogórek",100],["sałata",50]],["jajka"],330,17,35,12,"Ugotuj jajka i ziemniaki, pokrój i wymieszaj z warzywami."],
-["Kolacja","Ciepła sałatka z batatem i ciecierzycą","vegan",[["batat",180],["ciecierzyca",100],["szpinak",50],["oliwa",5]],[],370,12,59,9,"Upiecz batata, wymieszaj z ciecierzycą i szpinakiem."],
-["Kolacja","Frittata z cukinią","vegetarian",[["jajka",2],["cukinia",100],["ser feta",25]],["jajka","mleko"],290,19,8,20,"Podsmaż cukinię, zalej jajkami i dodaj fetę."],
-["Kolacja","Sałatka z tuńczykiem i ryżem","all",[["tuńczyk",100],["ryż suchy",50],["kukurydza",50],["ogórek",80]],["ryby"],360,28,48,5,"Ugotuj ryż, ostudź i wymieszaj z tuńczykiem i warzywami."],
-["Kolacja","Fasola w sosie pomidorowym z kaszą gryczaną","vegan",[["fasola biała",150],["kasza gryczana",55],["passata",150]],[],390,17,65,4,"Ugotuj kaszę. Fasolę podgrzej z passatą."],
-["Kolacja","Sałatka z tofu i warzywami","vegan",[["tofu",130],["sałata",60],["pomidor",100],["ogórek",100],["oliwa",5]],["soja"],300,21,18,16,"Pokrój warzywa i tofu, wymieszaj z oliwą."],
-["Kolacja","Pieczony batat z twarożkiem","vegetarian",[["batat",200],["twaróg",100],["jogurt naturalny",25],["szczypiorek",5]],["mleko"],340,22,47,5,"Upiecz batata. Twaróg wymieszaj z jogurtem i szczypiorkiem."],
-["Kolacja","Sałatka z pieczonymi warzywami","vegan",[["cukinia",100],["papryka",100],["ziemniaki",150],["rukola",30],["oliwa",5]],[],320,7,49,10,"Upiecz pokrojone warzywa i ziemniaki, podaj na rukoli."]
+// === ŚNIADANIE (32) ===
+["Śniadanie","Jajecznica z łososiem wędzonym i szpinakiem","all",[["jajka",3],["łosoś wędzony",70],["szpinak",60],["oliwa",6]],["jajka","ryby"],410,34,3,29,"Podduś szpinak na oliwie, dodaj łososia i roztrzepane jajka, zetnij."],
+["Śniadanie","Wysokobiałkowy omlet z indykiem i papryką","all",[["jajka",3],["pierś indyka",100],["papryka",80],["oliwa",6]],["jajka"],430,42,6,26,"Podsmaż indyka z papryką, zalej jajkami i usmaż puszysty omlet."],
+["Śniadanie","Twaróg z rzodkiewką, szczypiorkiem i nasionami słonecznika","vegetarian",[["twaróg",200],["jogurt naturalny",50],["rzodkiewka",60],["szczypiorek",10],["pestki słonecznika",15],["wafle ryżowe",2]],["mleko"],410,42,28,14,"Wymieszaj twaróg z jogurtem, warzywami i słonecznikiem, zjedz z waflami."],
+["Śniadanie","Szakszuka z ciecierzycą, fetą i jajkami","vegetarian",[["jajka",2],["ciecierzyca",100],["passata",150],["ser feta",40],["oliwa",5]],["jajka","mleko"],450,26,34,24,"W passacie z ciecierzycą zrób wgłębienia, wbij jajka, posyp fetą i duś."],
+["Śniadanie","Omlet z tuńczykiem, pomidorem i oliwkami","all",[["jajka",3],["tuńczyk",90],["pomidor",100],["oliwki",20]],["jajka","ryby"],390,38,7,23,"Roztrzep jajka z tuńczykiem, wylej na patelnię z pomidorem i oliwkami."],
+["Śniadanie","Wysokobiałkowe placki twarogowe (syrniki) b/g","vegetarian",[["twaróg",180],["jajka",1],["mąka ryżowa",35],["borówki",80],["olej",5]],["jajka","mleko"],430,37,42,12,"Zgnieć twaróg z jajkiem i mąką, uformuj placki, usmaż i podaj z borówkami."],
+["Śniadanie","Owsianka proteinowa z twarogiem i masłem orzechowym","vegetarian",[["płatki owsiane bezglutenowe",60],["twaróg",120],["napój ryżowy",180],["masło orzechowe",20],["cynamon",1]],["mleko","orzechy"],530,36,63,16,"Ugotuj płatki w napoju, wmieszaj twaróg i masło orzechowe."],
+["Śniadanie","Tofucznica wysokobiałkowa ze szpinakiem i chia","vegan",[["tofu",220],["szpinak",80],["oliwa",8],["nasiona chia",15],["pomidory koktajlowe",100]],["soja"],390,32,14,24,"Rozgnieć tofu z kurkumą, podsmaż ze szpinakiem, chia i pomidorkami."],
+["Śniadanie","Frittata z kurczakiem, cukinią i suszonymi pomidorami","all",[["jajka",2],["pierś kurczaka",90],["cukinia",80],["suszone pomidory",20],["oliwa",5]],["jajka"],380,35,9,22,"Podduś kurczaka i warzywa, zalej jajkami i zapiecz."],
+["Śniadanie","Jajka sadzone na batacie ze szpinakiem","vegetarian",[["jajka",2],["batat",200],["szpinak",60],["oliwa",6]],["jajka"],360,17,49,12,"Upiecz plastry batata, podaj z jajkami sadzonymi i szpinakiem."],
+["Śniadanie","Jaglanka z jabłkiem i cynamonem","vegan",[["kasza jaglana",70],["jabłko",150],["napój ryżowy",200],["cynamon",1]],[],410,9,78,6,"Ugotuj kaszę w napoju. Podaj z jabłkiem i cynamonem."],
+["Śniadanie","Owsianka z bananem i borówkami b/g","vegan",[["płatki owsiane bezglutenowe",70],["napój ryżowy",220],["banan",100],["borówki",60]],[],420,9,84,6,"Ugotuj płatki w napoju ryżowym, dodaj owoce."],
+["Śniadanie","Jajka gotowane z awokado i pomidorami","vegetarian",[["jajka",3],["awokado",60],["pomidor",120]],["jajka"],350,21,11,25,"Ugotuj jajka, podaj z cząstkami świeżego awokado i pomidora."],
+["Śniadanie","Komosa ryżowa z malinami i nasionami chia","vegan",[["komosa ryżowa sucha",65],["maliny",100],["napój ryżowy",180],["nasiona chia",15]],[],390,12,68,9,"Ugotuj komosę, połącz z nasionami chia i świeżymi malinami."],
+["Śniadanie","Omlet ze szpinakiem i fetą","vegetarian",[["jajka",2],["ser feta",40],["szpinak",60],["oliwa",5]],["jajka","mleko"],340,21,5,27,"Podsmaż szpinak, wylej jajka, posyp fetą i złóż omlet."],
+["Śniadanie","Ryż na mleku kokosowym z gruszką i pestkami dyni","vegan",[["ryż suchy",60],["napój kokosowy",200],["gruszka",120],["pestki dyni",15]],[],460,9,80,12,"Ugotuj ryż w napoju kokosowym, dodaj gruszkę i prażoną dynię."],
+["Śniadanie","Placki bananowo-jajeczne z mąką ryżową","vegetarian",[["banan",100],["jajka",2],["mąka ryżowa",45],["olej",6]],["jajka"],390,14,52,14,"Zblenduj banana z jajkami i mąką, usmaż małe placki."],
+["Śniadanie","Gryczanka na słodko z twarogiem i cynamonem","vegetarian",[["kasza gryczana",60],["twaróg",120],["napój ryżowy",150],["cynamon",1],["borówki",60]],["mleko"],430,28,62,7,"Ugotuj białą kaszę gryczaną na napoju, połącz z twarogiem i owocami."],
+["Śniadanie","Szakszuka klasyczna z papryką i pomidorami","vegetarian",[["jajka",3],["pomidor",180],["papryka",80],["oliwa",6]],["jajka"],340,22,17,21,"Podsmaż warzywa, wbij 3 jajka i duś do ścięcia białek."],
+["Śniadanie","Jajecznica z pomidorkami koktajlowymi i szczypiorkiem","vegetarian",[["jajka",3],["pomidory koktajlowe",120],["szczypiorek",10],["oliwa",6]],["jajka"],290,21,6,20,"Rozgrzej oliwę z pomidorkami, dodaj roztrzepane jajka i szczypiorek."],
+["Śniadanie","Gofry ryżowe z twarogiem i malinami","vegetarian",[["mąka ryżowa",55],["jajka",1],["jogurt naturalny",60],["twaróg",100],["maliny",70]],["jajka","mleko"],410,27,53,10,"Wymieszaj składniki, upiecz gofry i podaj ze świeżym twarogiem."],
+["Śniadanie","Smoothie bowl bananowo-białkowy z chia","vegan",[["banan",140],["borówki",100],["tofu",100],["napój ryżowy",100],["nasiona chia",15]],["soja"],370,16,64,9,"Zblenduj tofu z bananem i napojem, udekoruj borówkami i nasionami chia."],
+["Śniadanie","Jaglanka z musem truskawkowym i słonecznikiem","vegan",[["kasza jaglana",65],["napój ryżowy",180],["truskawki",140],["pestki słonecznika",15]],[],430,12,71,12,"Ugotuj jaglankę, polej zblendowanymi truskawkami i posyp słonecznikiem."],
+["Śniadanie","Polenta na ciepło z borówkami i cynamonem","vegan",[["kaszka kukurydziana",60],["napój ryżowy",220],["borówki",120],["cynamon",1]],[],330,6,68,4,"Ugotuj kaszkę kukurydzianą na napoju, podaj na ciepło z borówkami."],
+["Śniadanie","Pieczony batat z pastą z jajka i szczypiorku","vegetarian",[["batat",200],["jajka",2],["jogurt naturalny",30],["szczypiorek",10]],["jajka","mleko"],360,18,52,10,"Upiecz połówki batata, nałóż rozgniecione jajka z jogurtem i szczypiorkiem."],
+["Śniadanie","Omlet z pieczarkami i szpinakiem","vegetarian",[["jajka",3],["pieczarki",100],["szpinak",50],["oliwa",6]],["jajka"],310,22,6,22,"Podsmaż pieczarki ze szpinakiem, zalej jajkami i usmaż omlet."],
+["Śniadanie","Pudding chia na mleku kokosowym z bananem","vegan",[["nasiona chia",30],["napój kokosowy",200],["banan",100]],[],370,7,45,20,"Wymieszaj chia z napojem kokosowym, odstaw i udekoruj bananem."],
+["Śniadanie","Kremowa komosa z jabłkiem i pestkami dyni","vegan",[["komosa ryżowa sucha",60],["jabłko",120],["napój ryżowy",160],["pestki dyni",15]],[],380,12,62,10,"Ugotuj komosę z tartym jabłkiem, posyp prażoną dynią."],
+["Śniadanie","Placki z cukinii i mąki ryżowej z jajkiem","vegetarian",[["cukinia",200],["jajka",2],["mąka ryżowa",50],["oliwa",6]],["jajka"],340,15,44,12,"Zetrzyj cukinię, połącz z mąką ryżową i jajkiem, usmaż placki."],
+["Śniadanie","Tofucznica po hiszpańsku z pomidorami i papryką","vegan",[["tofu",180],["pomidor",120],["papryka",80],["oliwa",7]],["soja"],320,24,14,19,"Podsmaż warzywa na oliwie, dodaj rozgniecione tofu i przyprawy."],
+["Śniadanie","Twarożek ze szczypiorkiem i pieczonymi ziemniakami","vegetarian",[["twaróg",150],["jogurt naturalny",40],["ziemniaki",200],["szczypiorek",10]],["mleko"],370,33,48,4,"Upiecz ziemniaki w plasterkach, zjedz ze świeżym twarogiem."],
+["Śniadanie","Jajka sadzone z fasolką w sosie pomidorowym","vegetarian",[["jajka",2],["fasola biała",120],["passata",100],["oliwa",5]],["jajka"],360,22,35,14,"Podgrzej fasolę w passacie, zrób wgłębienia i zetnij w nich jajka."]
+,
+// === DRUGIE ŚNIADANIE (30) ===
+["Drugie śniadanie","Serek wiejski wysokobiałkowy z pestkami dyni i ogórkiem","vegetarian",[["serek wiejski",220],["pestki dyni",20],["ogórek",100],["szczypiorek",5]],["mleko"],320,32,12,17,"Wymieszaj serek wiejski z pestkami dyni, ogórkiem i szczypiorkiem."],
+["Drugie śniadanie","Sałatka z tuńczykiem, jajkiem na twardo i pomidorkami","all",[["tuńczyk",90],["jajka",1],["pomidory koktajlowe",100],["sałata",50],["oliwa",5]],["jajka","ryby"],270,30,6,14,"Wymieszaj odsączonego tuńczyka z jajkiem, sałatą i pomidorkami."],
+["Drugie śniadanie","Twaróg z rzodkiewką i waflami kukurydzianymi","vegetarian",[["twaróg",160],["jogurt naturalny",40],["rzodkiewka",80],["wafle kukurydziane",3]],["mleko"],280,33,26,4,"Rozgnieć twaróg z odrobiną jogurtu i rzodkiewką, podaj z chrupkimi waflami."],
+["Drugie śniadanie","Koktajl proteinowy z kefiru i masła orzechowego","vegetarian",[["kefir",250],["masło orzechowe",20],["banan",80]],["mleko","orzechy"],320,15,36,14,"Zblenduj kefir z masłem orzechowym i bananem na aksamitny koktajl."],
+["Drugie śniadanie","Wafle ryżowe z pieczonym indykiem i awokado","all",[["pierś indyka",80],["awokado",50],["wafle ryżowe",3],["pomidor",60]],[],310,25,32,11,"Na waflach ułóż plastry upieczonego indyka, awokado i pomidora."],
+["Drugie śniadanie","Sałatka z ciecierzycą, fetą i ogórkiem","vegetarian",[["ciecierzyca",120],["ser feta",45],["ogórek",100],["oliwa",5]],["mleko"],310,15,26,17,"Połącz odsączoną ciecierzycę z kostkami fety, ogórkiem i oliwą."],
+["Drugie śniadanie","Pasta z wędzonej makreli i twarogu","all",[["makrela wędzona",60],["twaróg",80],["szczypiorek",5],["wafle ryżowe",2]],["mleko","ryby"],290,27,18,13,"Rozgnieć makrelę z twarogiem i szczypiorkiem, nałóż na wafle."],
+["Drugie śniadanie","Kefir z siemieniem lnianym i borówkami","vegetarian",[["kefir",250],["siemię lniane",15],["borówki",100]],["mleko"],230,12,26,10,"Wymieszaj kefir ze świeżo mielonym siemieniem i owocami."],
+["Drugie śniadanie","Hummus z jajkiem na twardo i marchewką","vegetarian",[["hummus",60],["jajka",1],["marchew",150]],["jajka","sezam"],280,13,27,14,"Ugotuj jajko, podaj z kremowym hummusem i słupkami świeżej marchwi."],
+["Drugie śniadanie","Jogurt z borówkami i nasionami chia","vegetarian",[["jogurt naturalny",200],["borówki",100],["nasiona chia",12]],["mleko"],220,12,26,7,"Wymieszaj jogurt z chia i świeżymi borówkami."],
+["Drugie śniadanie","Wafle ryżowe z awokado i pomidorem","vegan",[["wafle ryżowe",3],["awokado",70],["pomidor",100]],[],270,5,35,14,"Rozgnieć awokado widelcem, posmaruj wafle i dodaj plastry pomidora."],
+["Drugie śniadanie","Koktajl kefir-malina-banan","vegetarian",[["kefir",220],["maliny",100],["banan",80]],["mleko"],220,9,39,4,"Zblenduj kefir z malinami i dojrzałym bananem."],
+["Drugie śniadanie","Serek wiejski z ogórkiem i rzodkiewką","vegetarian",[["serek wiejski",200],["ogórek",100],["rzodkiewka",60]],["mleko"],200,23,11,6,"Wymieszaj serek ze świeżymi chrupiącymi warzywami."],
+["Drugie śniadanie","Sałatka owocowa z orzechami włoskimi","vegan",[["jabłko",100],["gruszka",100],["orzechy włoskie",20]],["orzechy"],220,4,36,11,"Pokrój owoce w kostkę i posyp posiekanymi orzechami."],
+["Drugie śniadanie","Hummus z warzywami w słupkach","vegan",[["hummus",70],["marchew",120],["ogórek",100]],["sezam"],240,7,28,12,"Zjedz porcję hummusu ze świeżymi słupkami warzyw."],
+["Drugie śniadanie","Koktajl mango-banan na napoju ryżowym","vegan",[["mango",140],["banan",70],["napój ryżowy",160]],[],220,3,52,2,"Zblenduj owoce z napojem ryżowym na gładki koktajl."],
+["Drugie śniadanie","Dwa jajka na twardo z pomidorkami","vegetarian",[["jajka",2],["pomidory koktajlowe",140]],["jajka"],190,16,8,11,"Ugotuj jajka na twardo i zjedz z pomidorkami koktajlowymi."],
+["Drugie śniadanie","Pudding ryżowy z malinami i kokosem","vegan",[["ryż suchy",40],["napój kokosowy",160],["maliny",80]],[],250,4,47,6,"Ugotuj ryż w napoju kokosowym, dodaj maliny."],
+["Drugie śniadanie","Pieczona chrupka ciecierzyca z papryką","vegan",[["ciecierzyca",140],["oliwa",6],["papryka słodka",2]],[],250,11,34,8,"Wymieszaj ciecierzycę z oliwą i papryką, upiecz na chrupko w piekarniku."],
+["Drugie śniadanie","Mus z awokado, kakao i banana","vegan",[["awokado",70],["kakao",8],["banan",90]],[],230,3,32,12,"Zblenduj dojrzałe awokado z bananem i kakao."],
+["Drugie śniadanie","Pomidor z mozzarellą i bazylią","vegetarian",[["pomidor",150],["ser mozzarella",70],["oliwa",5]],["mleko"],230,13,6,17,"Pokrój pomidora i mozzarellę w plastry, skrop oliwą i posyp bazylią."],
+["Drugie śniadanie","Jabłko z pestkami słonecznika","vegan",[["jabłko",150],["pestki słonecznika",20]],[],190,4,26,9,"Pokrój chrupiące jabłko i zjedz z pestkami słonecznika."],
+["Drugie śniadanie","Wafle ryżowe z pastą z białej fasoli","vegan",[["fasola biała",120],["oliwa",5],["wafle ryżowe",2],["ogórek",80]],[],240,10,36,6,"Zblenduj fasolę z oliwą, posmaruj wafle i obłóż ogórkiem."],
+["Drugie śniadanie","Zielony koktajl ze szpinaku, kiwi i banana","vegan",[["szpinak",60],["kiwi",100],["banan",90],["woda",150]],[],160,3,37,1,"Zblenduj szpinak z owocami i wodą na orzeźwiający napój."],
+["Drugie śniadanie","Gotowany bób z koperkiem i oliwą","vegan",[["bób",180],["oliwa",5],["koperek",4]],[],200,14,23,7,"Ugotuj bób, wymieszaj ze świeżym koperkiem i odrobiną oliwy."],
+["Drugie śniadanie","Koreczki z fety, oliwek i ogórka","vegetarian",[["ser feta",45],["oliwki",25],["ogórek",100]],["mleko"],190,8,6,16,"Nadziewaj na wykałaczki kawałki sera feta, oliwki i ogórka."],
+["Drugie śniadanie","Rukola z gruszką, pestkami dyni i cytryną","vegan",[["rukola",50],["gruszka",140],["pestki dyni",15]],[],180,5,26,7,"Wymieszaj rukolę z cząstkami gruszki i pestkami dyni."],
+["Drugie śniadanie","Jogurt naturalny z tartym jabłkiem i cynamonem","vegetarian",[["jogurt naturalny",200],["jabłko",120],["cynamon",1]],["mleko"],180,9,28,4,"Zetrzyj jabłko i wymieszaj z gęstym jogurtem naturalnym."],
+["Drugie śniadanie","Pieczony batat w ziołach","vegan",[["batat",180],["oliwa",6]],[],190,3,37,5,"Pokrój batata w plastry i upiecz ze szczyptą ziół."],
+["Drugie śniadanie","Wafle ryżowe z masłem migdałowym","vegan",[["wafle ryżowe",3],["masło orzechowe",20]],["orzechy"],240,7,27,12,"Posmaruj chrupiące wafle masłem orzechowym lub migdałowym."]
+,
+// === OBIAD (36) ===
+["Obiad","Pierś z kurczaka z ryżem jaśminowym i brokułami","all",[["pierś kurczaka",200],["ryż suchy",80],["brokuł",180],["oliwa",7]],[],660,54,77,13,"Ugotuj ryż i brokuły. Pierś z kurczaka upiecz lub usmaż na oliwie."],
+["Obiad","Polędwiczki z indyka z kaszą gryczaną i warzywami","all",[["pierś indyka",200],["kasza gryczana",80],["cukinia",120],["marchew",100],["oliwa",6]],[],620,52,70,11,"Ugotuj kaszę. Indyka uduś z warzywami na patelni."],
+["Obiad","Stek z polędwicy wołowej z ziemniakami i fasolką","all",[["chuda wołowina",180],["ziemniaki",300],["fasolka szparagowa",150],["oliwa",8]],[],620,49,63,16,"Upiecz lub usmaż stek wołowy, podaj z ziemniakami i fasolką."],
+["Obiad","Pieczony łosoś z komosą ryżową i szparagami","all",[["filet z łososia",170],["komosa ryżowa sucha",75],["cukinia",150],["oliwa",5]],["ryby"],660,42,60,25,"Upiecz łososia w ziołach, ugotuj komosę i podduś cukinię."],
+["Obiad","Dorsz pieczony z ziemniakami i sosem pomidorowym","all",[["filet z dorsza",220],["ziemniaki",300],["passata",150],["oliwa",7]],["ryby"],550,46,67,10,"Upiecz dorsza w sosie pomidorowym, podaj z gotowanymi ziemniakami."],
+["Obiad","Chili con carne z chudą wołowiną, czerwoną fasolą i ryżem","all",[["chuda wołowina",150],["fasola czerwona",120],["ryż suchy",70],["passata",180],["oliwa",6]],[],690,49,88,14,"Podsmaż wołowinę, dodaj fasolę i passatę, uduś i podaj z ryżem."],
+["Obiad","Pulpety z indyka w passacie z puree ziemniaczanym","all",[["pierś indyka",190],["jajka",1],["passata",200],["ziemniaki",300]],["jajka"],590,53,68,9,"Zmiksuj indyka z jajkiem, uformuj pulpety, uduś w passacie z ziemniakami."],
+["Obiad","Curry z kurczakiem, ciecierzycą i mleczkiem kokosowym","all",[["pierś kurczaka",170],["ciecierzyca",100],["napój kokosowy",120],["ryż suchy",70]],[],710,51,82,18,"Podsmaż kurczaka, dodaj ciecierzycę, curry i napój kokosowy, podaj z ryżem."],
+["Obiad","Schab pieczony w majeranku z kaszą gryczaną i buraczkami","all",[["schab",180],["kasza gryczana",75],["buraki",150],["oliwa",6]],[],600,47,68,13,"Upiecz schab w ziołach, ugotuj kaszę gryczaną, podaj z burakami."],
+["Obiad","Krewetki z czosnkiem, pomidorkami i ryżem jaśminowym","all",[["krewetki",200],["ryż suchy",80],["pomidory koktajlowe",150],["oliwa",10]],["ryby"],550,42,75,13,"Podsmaż krewetki z czosnkiem i pomidorkami na oliwie, zjedz z ryżem."],
+["Obiad","Dorsz na parze z puree z batatów i brokułem","all",[["filet z dorsza",200],["batat",260],["brokuł",150],["oliwa",5]],["ryby"],480,41,63,6,"Ugotuj rybę i brokuł na parze, zrób puree z upieczonego batata."],
+["Obiad","Pieczone udko kurczaka b/s z ziemniakami i marchewką","all",[["udko kurczaka",220],["ziemniaki",280],["marchew",120],["oliwa",6]],[],630,50,59,20,"Upiecz zamarynowane udko bez skóry z ziemniakami i marchewką."],
+["Obiad","Pstrąg pieczony w ziołach z ziemniakami i koperkiem","all",[["filet z pstrąga",180],["ziemniaki",280],["koperek",5],["oliwa",6]],["ryby"],530,41,58,16,"Upiecz pstrąga z koperkiem i cytryną, podaj z ziemniakami."],
+["Obiad","Curry z ciecierzycą, szpinakiem i ryżem","vegan",[["ciecierzyca",150],["ryż suchy",75],["napój kokosowy",120],["szpinak",100]],[],640,19,95,19,"Podduś ciecierzycę ze szpinakiem i napojem kokosowym, podaj z ryżem."],
+["Obiad","Gulasz z soczewicy czerwonej z ryżem i warzywami","vegan",[["soczewica sucha",80],["ryż suchy",70],["passata",200],["marchew",100]],[],610,26,105,6,"Ugotuj soczewicę w passacie z marchewką, podaj z ryżem."],
+["Obiad","Faszerowana papryka z ryżem, czarną fasolą i passatą","vegan",[["papryka",200],["ryż suchy",70],["fasola czerwona",130],["passata",120]],[],560,18,99,6,"Napełnij paprykę farszem z ryżu, fasoli i passaty, a następnie upiecz."],
+["Obiad","Stir-fry z tofu, brokułem i makaronem ryżowym","vegan",[["tofu",180],["makaron ryżowy",80],["brokuł",160],["oliwa",8]],["soja"],600,29,81,19,"Podsmaż tofu z brokułem, wymieszaj z ugotowanym makaronem ryżowym."],
+["Obiad","Zupa gęsta z czerwonej soczewicy i dyni z ryżem","vegan",[["soczewica sucha",75],["dynia",200],["passata",150],["ryż suchy",50]],[],530,23,89,5,"Ugotuj soczewicę z dynią w passacie i podaj z ryżem."],
+["Obiad","Pieczone warzywa z fetą i ziemniakami","vegetarian",[["ziemniaki",250],["cukinia",120],["papryka",120],["ser feta",50],["oliwa",6]],["mleko"],510,16,69,18,"Upiecz pokrojone warzywa i ziemniaki na oliwie, posyp serem feta."],
+["Obiad","Kotlety z ciecierzycy z kaszą jaglaną i sosem pomidorowym","vegan",[["ciecierzyca",160],["kasza jaglana",70],["passata",120],["oliwa",8]],[],620,23,98,15,"Zblenduj ciecierzycę z ziołami, upiecz kotleciki, zjedz z kaszą."],
+["Obiad","Risotto z pieczarkami, szpinakiem i oliwą z oliwek","vegan",[["ryż suchy",85],["pieczarki",160],["szpinak",80],["oliwa",12]],[],510,12,86,14,"Podsmaż pieczarki ze szpinakiem, dodaj ryż i podlewaj bulionem."],
+["Obiad","Gulasz z białej fasoli z pieczonymi ziemniakami","vegan",[["fasola biała",160],["ziemniaki",250],["cukinia",100],["passata",160],["oliwa",6]],[],530,21,88,8,"Uduś fasolę z warzywami w passacie, podaj z upieczonymi ziemniakami."],
+["Obiad","Curry warzywne z tofu i ryżem basmati","vegan",[["tofu",160],["cukinia",120],["napój kokosowy",130],["ryż suchy",70]],["soja"],610,26,76,21,"Podduś tofu i warzywa w aromatycznym sosie kokosowym z curry."],
+["Obiad","Kotlety jaglane z cukinią i sałatką z pomidorów","vegan",[["kasza jaglana",80],["cukinia",140],["oliwa",10],["pomidor",150]],[],490,13,82,13,"Ugotuj kaszę jaglaną, zagnieć ze startą cukinią, upiecz kotlety."],
+["Obiad","Potrawka z ciecierzycy, szpinaku i pomidorów z ryżem","vegan",[["ciecierzyca",150],["szpinak",120],["passata",120],["ryż suchy",75],["oliwa",6]],[],590,20,98,12,"Podduś ciecierzycę ze szpinakiem w sosie pomidorowym, podaj z ryżem."],
+["Obiad","Krem z dyni i marchwi z soczewicą i pestkami dyni","vegan",[["soczewica sucha",60],["dynia",220],["marchew",120],["pestki dyni",20]],[],480,24,62,17,"Ugotuj warzywa z soczewicą, zblenduj na krem i posyp prażoną dynią."],
+["Obiad","Chili sin carne z fasolą, kukurydzą i ryżem","vegan",[["fasola czerwona",150],["kukurydza",70],["ryż suchy",75],["passata",180]],[],590,21,105,6,"Uduś fasolę z kukurydzą w pomidorach, serwuj z ugotowanym ryżem."],
+["Obiad","Polędwiczki z indyka z batatami i brokułem","all",[["pierś indyka",190],["batat",250],["brokuł",150],["oliwa",6]],[],580,48,68,11,"Upiecz polędwiczki z indyka z batatem, zjedz z gotowanym brokułem."],
+["Obiad","Łosoś pieczony z puree ziemniaczanym i fasolką","all",[["filet z łososia",160],["ziemniaki",280],["fasolka szparagowa",140]],["ryby"],580,38,62,19,"Upiecz łososia, podaj z ziemniakami i ugotowaną fasolką."],
+["Obiad","Gulasz wołowy z kaszą gryczaną i kiszonym ogórkiem","all",[["chuda wołowina",170],["kasza gryczana",80],["marchew",120],["oliwa",7]],[],630,49,71,15,"Uduś wołowinę z marchewką do miękkości, podaj z kaszą gryczaną."],
+["Obiad","Dorsz zapiekany w warzywach z komosą ryżową","all",[["filet z dorsza",200],["komosa ryżowa sucha",70],["cukinia",120],["oliwa",6]],["ryby"],500,43,58,9,"Upiecz rybę z warzywami, podaj z ugotowaną komosą ryżową."],
+["Obiad","Pierś z kurczaka w sosie pomidorowym z kaszą jaglaną","all",[["pierś kurczaka",190],["kasza jaglana",75],["passata",150],["oliwa",6]],[],590,50,71,11,"Uduś pierś kurczaka w aromatycznej passacie, podaj z kaszą jaglaną."],
+["Obiad","Makaron ryżowy z kurczakiem, cukinią i sezamem","all",[["pierś kurczaka",180],["makaron ryżowy",80],["cukinia",120],["sezam",15],["oliwa",6]],["sezam"],640,49,75,17,"Podsmaż kurczaka z cukinią i sezamem, wymieszaj z makaronem."],
+["Obiad","Ciecierzyca po bretońsku w passacie z pieczonym batatem","vegan",[["ciecierzyca",160],["batat",220],["passata",150],["oliwa",6]],[],540,17,89,10,"Uduś ciecierzycę z majerankiem w passacie, zjedz z pieczonym batatem."],
+["Obiad","Zapiekanka z dorsza, ziemniaków i szpinaku","all",[["filet z dorsza",190],["ziemniaki",260],["szpinak",100],["oliwa",7]],["ryby"],460,40,55,9,"Ułóż warstwy ziemniaków, ryby i szpinaku, zapiecz w piekarniku."],
+["Obiad","Tofu po seczuańsku z papryką i ryżem","vegan",[["tofu",180],["ryż suchy",75],["papryka",120],["oliwa",8]],["soja"],580,28,78,17,"Podsmaż tofu z chrupiącą papryką i sosem, podaj z ryżem."]
+,
+// === PODWIECZOREK (28) ===
+["Podwieczorek","Serek wiejski z borówkami i cynamonem","vegetarian",[["serek wiejski",200],["borówki",100],["cynamon",1]],["mleko"],230,23,17,6,"Wymieszaj serek wiejski ze świeżymi borówkami i cynamonem."],
+["Podwieczorek","Twarożek waniliowy z malinami i nasionami chia","vegetarian",[["twaróg",120],["jogurt naturalny",40],["maliny",80],["nasiona chia",10]],["mleko"],230,25,16,6,"Rozgnieć twaróg z odrobiną jogurtu, dodaj chia i maliny."],
+["Podwieczorek","Koktajl wysokobiałkowy na kefirze z bananem i masłem orzechowym","vegetarian",[["kefir",250],["banan",90],["masło orzechowe",20]],["mleko","orzechy"],320,15,38,14,"Zblenduj kefir z bananem i masłem orzechowym."],
+["Podwieczorek","Pieczone jabłko z twarogiem i cynamonem","vegetarian",[["jabłko",160],["twaróg",100],["cynamon",1]],["mleko"],210,18,29,3,"Wydrąż jabłko, napełnij twarogiem z cynamonem i upiecz."],
+["Podwieczorek","Wafle ryżowe z masłem orzechowym i bananem","vegan",[["wafle ryżowe",2],["masło orzechowe",20],["banan",70]],["orzechy"],260,6,37,11,"Posmaruj wafle masłem orzechowym i ułóż plasterki banana."],
+["Podwieczorek","Pudding chia z kakao i bananem","vegan",[["nasiona chia",25],["napój ryżowy",180],["kakao",6],["banan",70]],[],280,6,42,11,"Wymieszaj chia z napojem i kakao, schłodź i udekoruj bananem."],
+["Podwieczorek","Kremowa polenta z truskawkami","vegetarian",[["kaszka kukurydziana",40],["mleko",200],["truskawki",100]],["mleko"],280,10,48,6,"Ugotuj kaszkę kukurydzianą na mleku, podaj z truskawkami."],
+["Podwieczorek","Serek wiejski z brzoskwinią","vegetarian",[["serek wiejski",180],["brzoskwinia",120]],["mleko"],210,21,21,5,"Pokrój dojrzałą brzoskwinię i połącz z serkiem wiejskim."],
+["Podwieczorek","Jogurt z gruszką i pestkami dyni","vegetarian",[["jogurt naturalny",180],["gruszka",120],["pestki dyni",15]],["mleko"],260,11,33,10,"Pokrój gruszkę, wymieszaj z jogurtem i posyp prażoną dynią."],
+["Podwieczorek","Kuleczki daktylowo-kokosowe","vegan",[["daktyle",50],["wiórki kokosowe",15],["pestki słonecznika",15]],[],290,5,44,12,"Zblenduj daktyle, połącz z wiórkami i słonecznikiem, zwiń w kulki."],
+["Podwieczorek","Koktajl truskawkowo-bananowy","vegan",[["truskawki",140],["banan",100],["napój ryżowy",160]],[],220,3,49,2,"Zblenduj owoce z napojem ryżowym na gładki mus."],
+["Podwieczorek","Gruszka z pestkami dyni","vegan",[["gruszka",160],["pestki dyni",20]],[],210,6,31,10,"Pokrój gruszkę w cząstki i zjedz z pestkami dyni."],
+["Podwieczorek","Mus jabłkowo-malinowy z nasionami chia","vegan",[["jabłko",140],["maliny",100],["nasiona chia",10]],[],180,3,37,4,"Podduś owoce, zblenduj i połącz z nasionami chia."],
+["Podwieczorek","Pieczone jabłko z cynamonem i orzechami","vegan",[["jabłko",180],["orzechy włoskie",15],["cynamon",1]],["orzechy"],200,3,33,9,"Upiecz jabłko z cynamonem i posiekanymi orzechami."],
+["Podwieczorek","Banan z masłem migdałowym","vegan",[["banan",120],["masło orzechowe",20]],["orzechy"],240,6,33,11,"Pokrój banana i zjedz z łyżką masła orzechowego lub migdałowego."],
+["Podwieczorek","Kefir z truskawkami i siemieniem","vegetarian",[["kefir",220],["truskawki",120],["siemię lniane",10]],["mleko"],190,9,24,6,"Zblenduj kefir z truskawkami i świeżo zmielonym siemieniem."],
+["Podwieczorek","Wafle ryżowe z bananem i cynamonem","vegan",[["wafle ryżowe",3],["banan",100],["cynamon",1]],[],190,3,43,1,"Ułóż plastry banana na waflach i obficie posyp cynamonem."],
+["Podwieczorek","Mus z mango z nasionami chia","vegan",[["mango",150],["nasiona chia",15]],[],190,3,35,5,"Zblenduj mango i wymieszaj z nasionami chia."],
+["Podwieczorek","Marchewka z dipem jogurtowo-ziołowym","vegetarian",[["marchew",180],["jogurt naturalny",100],["szczypiorek",5]],["mleko"],140,7,21,3,"Pokrój marchew w słupki, podaj z dipem z jogurtu i ziół."],
+["Podwieczorek","Twarożek na słodko z borówkami","vegetarian",[["twaróg",120],["borówki",100]],["mleko"],190,23,16,4,"Rozgnieć twaróg z odrobiną wody, wymieszaj ze świeżymi borówkami."],
+["Podwieczorek","Koktajl borówkowy na napoju kokosowym","vegan",[["borówki",120],["napój kokosowy",160],["banan",70]],[],210,3,34,8,"Zblenduj borówki z bananem i kremowym napojem kokosowym."],
+["Podwieczorek","Serek homogenizowany z kiwi","vegetarian",[["serek wiejski",150],["kiwi",90]],["mleko"],180,18,16,5,"Wymieszaj serek z pokrojonym w drobną kostkę kiwi."],
+["Podwieczorek","Mus brzoskwiniowy z bananem","vegan",[["brzoskwinia",140],["banan",80]],[],150,2,35,1,"Zblenduj dojrzałą brzoskwinię z bananem."],
+["Podwieczorek","Wafle ryżowe z musem jabłkowym","vegan",[["wafle ryżowe",3],["jabłko",150],["cynamon",1]],[],180,3,41,1,"Zetrzyj jabłko, podduś z cynamonem i wyłóż na wafle."],
+["Podwieczorek","Chłodnik truskawkowy na kefirze","vegetarian",[["kefir",220],["truskawki",120]],["mleko"],170,8,22,4,"Zblenduj truskawki z kefirem i podawaj schłodzone."],
+["Podwieczorek","Arbuz z miętą i limonką","vegan",[["arbuz",300]],[],100,2,24,0,"Pokrój świeży arbuz w kostkę i skrop sokiem z limonki."],
+["Podwieczorek","Mini sałatka z kiwi, borówek i banana","vegan",[["kiwi",80],["borówki",80],["banan",70]],[],160,2,37,1,"Pokrój owoce i wymieszaj w małej miseczce."],
+["Podwieczorek","Cząstki pomarańczy z cynamonem i orzechami","vegan",[["pomarańcza",200],["orzechy włoskie",15],["cynamon",1]],["orzechy"],170,4,25,9,"Obraną pomarańczę oprósz cynamonem i posyp orzechami."]
+,
+// === KOLACJA (34) ===
+["Kolacja","Sałatka z pieczoną piersią kurczaka, jajkiem i oliwkami","all",[["pierś kurczaka",140],["jajka",1],["sałata",70],["pomidor",120],["oliwki",25],["oliwa",6]],["jajka"],410,44,10,21,"Upiecz kurczaka, ugotuj jajko, połącz z sałatą, pomidorem i oliwkami."],
+["Kolacja","Sałatka z tuńczykiem, białą fasolą i pomidorami","all",[["tuńczyk",120],["fasola biała",120],["pomidor",140],["ogórek",80],["oliwa",6]],["ryby"],410,43,30,11,"Wymieszaj odsączonego tuńczyka z fasolą, świeżymi warzywami i oliwą."],
+["Kolacja","Frittata z cukinią, indykiem i fetą","all",[["jajka",3],["pierś indyka",90],["cukinia",100],["ser feta",30],["oliwa",5]],["jajka","mleko"],430,42,8,26,"Podsmaż indyka z cukinią, zalej jajkami, posyp fetą i zetnij pod przykryciem."],
+["Kolacja","Pieczony batat z twarogiem i szczypiorkiem","vegetarian",[["batat",220],["twaróg",150],["jogurt naturalny",30],["szczypiorek",10]],["mleko"],420,33,60,5,"Upiecz batata, nałóż gęsty twaróg wymieszany z jogurtem i szczypiorkiem."],
+["Kolacja","Sałatka z komosą ryżową i ciecierzycą","vegan",[["komosa ryżowa sucha",60],["ciecierzyca",120],["ogórek",100],["pomidor",120],["oliwa",7]],[],490,18,74,15,"Ugotuj komosę, wymieszaj z ciecierzycą, warzywami i oliwą."],
+["Kolacja","Omlet z 3 jaj z cukinią i pomidorem","vegetarian",[["jajka",3],["cukinia",120],["pomidor",120],["oliwa",6]],["jajka"],340,23,14,22,"Podsmaż warzywa na oliwie, wbij jajka i usmaż puszysty omlet."],
+["Kolacja","Sałatka z jajkiem na twardo, ziemniakami i ogórkiem","vegetarian",[["jajka",2],["ziemniaki",220],["ogórek",100],["sałata",60],["oliwa",6]],["jajka"],380,19,43,15,"Ugotuj jajka i ziemniaki, pokrój i połącz z sałatą, ogórkiem i oliwą."],
+["Kolacja","Ciepła sałatka z pieczonym batatem, ciecierzycą i szpinakiem","vegan",[["batat",200],["ciecierzyca",120],["szpinak",60],["oliwa",7]],[],440,14,72,12,"Upiecz batata w kostce, połącz na ciepło z ciecierzycą i szpinakiem."],
+["Kolacja","Sałatka z wędzonym łososiem, jajkiem w koszulce i rukolą","all",[["łosoś wędzony",70],["jajka",2],["rukola",60],["ogórek",100],["oliwa",5]],["jajka","ryby"],360,30,5,25,"Ułóż na rukoli plastry łososia, świeży ogórek i ciepłe jajka w koszulce."],
+["Kolacja","Fasola w gęstym sosie pomidorowym z kaszą gryczaną","vegan",[["fasola biała",160],["kasza gryczana",65],["passata",160]],[],450,20,77,5,"Ugotuj kaszę gryczaną. Fasolę podgrzej w passacie i połącz."],
+["Kolacja","Sałatka z tofu, warzywami i nasionami słonecznika","vegan",[["tofu",160],["sałata",60],["pomidor",120],["ogórek",100],["pestki słonecznika",15],["oliwa",6]],["soja"],370,25,18,22,"Pokrój tofu w kostkę, wymieszaj ze świeżymi warzywami, pestkami i oliwą."],
+["Kolacja","Pieczony pstrąg z fasolką szparagową i pomidorkami","all",[["filet z pstrąga",160],["fasolka szparagowa",180],["pomidory koktajlowe",100],["oliwa",6]],["ryby"],390,36,16,19,"Upiecz pstrąga z ziołami, podaj z ugotowaną fasolką i pomidorkami."],
+["Kolacja","Sałatka z pieczonymi warzywami i ziemniakami","vegan",[["cukinia",120],["papryka",120],["ziemniaki",180],["rukola",40],["oliwa",7]],[],360,8,57,12,"Upiecz pokrojone warzywa i ziemniaki, podaj na świeżej rukoli z oliwą."],
+["Kolacja","Krem z cukinii i ziemniaków z waflami ryżowymi","vegan",[["cukinia",280],["ziemniaki",150],["oliwa",6],["wafle ryżowe",2]],[],240,7,44,6,"Ugotuj cukinię z ziemniakiem, zblenduj na aksamitny krem, zjedz z waflami."],
+["Kolacja","Jajka sadzone ze szparagówką i pomidorkami","vegetarian",[["jajka",2],["fasolka szparagowa",180],["pomidory koktajlowe",120],["oliwa",6]],["jajka"],280,18,14,17,"Ugotuj fasolkę, usmaż jajka sadzone na oliwie i podaj razem."],
+["Kolacja","Tofu pieczone z brokułem i sosem pomidorowym","vegan",[["tofu",160],["brokuł",180],["passata",120],["oliwa",6]],["soja"],320,26,17,17,"Upiecz tofu i brokuł, polej podgrzaną passatą pomidorową."],
+["Kolacja","Sałatka grecka bez glutenu z fetą i oliwkami","vegetarian",[["pomidor",140],["ogórek",120],["ser feta",55],["oliwki",30],["oliwa",6]],["mleko"],310,11,13,25,"Pokrój warzywa i fetę w grubą kostkę, dodaj oliwki i polej oliwą."],
+["Kolacja","Komosa ryżowa na ciepło z cukinią i papryką","vegan",[["komosa ryżowa sucha",60],["cukinia",120],["papryka",100],["oliwa",6]],[],330,10,52,9,"Ugotuj komosę, podduś warzywa na oliwie i wymieszaj."],
+["Kolacja","Twarożek z rzodkiewką, szczypiorkiem i ziemniakami","vegetarian",[["twaróg",150],["jogurt naturalny",40],["ziemniaki",200],["szczypiorek",10]],["mleko"],370,33,48,4,"Upiecz ziemniaki w mundurkach, zjedz ze świeżym twarogiem."],
+["Kolacja","Sałatka z czerwoną fasolą, kukurydzą i papryką","vegan",[["fasola czerwona",140],["kukurydza",70],["papryka",100],["oliwa",6]],[],290,13,46,7,"Wymieszaj fasolę, kukurydzę i pokrojoną paprykę z dressingiem z oliwy."],
+["Kolacja","Dorsz na parze z warzywami i oliwą","all",[["filet z dorsza",180],["cukinia",140],["marchew",120],["oliwa",6]],["ryby"],290,34,17,7,"Ugotuj rybę z warzywami na parze, polej delikatnie oliwą."],
+["Kolacja","Krem z pieczonej papryki i pomidorów z waflami","vegan",[["papryka",220],["pomidor",220],["oliwa",6],["wafle ryżowe",2]],[],250,6,43,7,"Upiecz paprykę i pomidory, zblenduj na gęsty krem, zjedz z waflami."],
+["Kolacja","Omlet ze świeżymi pomidorkami i bazylią","vegetarian",[["jajka",3],["pomidory koktajlowe",140],["oliwa",6],["bazylia",4]],["jajka"],290,22,7,19,"Wlej jajka na patelnię z połówkami pomidorków i świeżą bazylią."],
+["Kolacja","Zapiekanka z cukinii, ziemniaków i jajka","vegetarian",[["cukinia",160],["ziemniaki",180],["jajka",2],["oliwa",6]],["jajka"],350,18,41,13,"Pokrój warzywa w plasterki, zalej roztrzepanymi jajkami i zapiecz."],
+["Kolacja","Cukinia faszerowana soczewicą w sosie pomidorowym","vegan",[["cukinia",240],["soczewica sucha",50],["passata",100]],[],280,16,46,3,"Ugotuj soczewicę z passatą, napełnij wydrążone cukinie i upiecz."],
+["Kolacja","Sałatka z pieczonego batata, szpinaku i fety","vegetarian",[["batat",180],["szpinak",60],["ser feta",40],["oliwa",5]],["mleko"],340,11,46,14,"Upiecz batata w kostce, połącz ze szpinakiem, fetą i oliwą."],
+["Kolacja","Zupa jarzynowa z kaszą jaglaną","vegan",[["marchew",120],["cukinia",120],["kasza jaglana",45],["oliwa",6]],[],270,7,47,7,"Ugotuj warzywa z kaszą jaglaną w lekkim bulionie warzywnym."],
+["Kolacja","Serek wiejski z rzodkiewką i waflami ryżowymi","vegetarian",[["serek wiejski",220],["rzodkiewka",80],["szczypiorek",5],["wafle ryżowe",3]],["mleko"],310,29,28,7,"Wymieszaj serek z warzywami, podaj z chrupkimi waflami."],
+["Kolacja","Carpaccio z buraka z pestkami dyni i rukolą","vegan",[["buraki",200],["rukola",50],["pestki dyni",20],["oliwa",6]],[],250,7,26,14,"Pokrój pieczonego buraka w cienkie plastry, posyp dynią i rukolą."],
+["Kolacja","Jajka w koszulce na duszonym szpinaku z czosnkiem","vegetarian",[["jajka",3],["szpinak",180],["oliwa",6]],["jajka"],300,24,6,20,"Podduś szpinak z czosnkiem na oliwie, na wierzchu ułóż jajka w koszulce."],
+["Kolacja","Pieczony dorsz z cukinią i pomidorami","all",[["filet z dorsza",180],["cukinia",150],["pomidor",150],["oliwa",6]],["ryby"],280,33,12,7,"Upiecz rybę w naczyniu żaroodpornym obłożoną plastrami warzyw."],
+["Kolacja","Sałatka z kurczakiem, rukolą i pomidorkami","all",[["pierś kurczaka",130],["rukola",50],["pomidory koktajlowe",120],["oliwa",6]],[],270,32,7,9,"Podsmaż zamarynowaną pierś kurczaka, ułóż na rukoli z pomidorkami."],
+["Kolacja","Krem z białych warzyw z ciecierzycą","vegan",[["marchew",100],["cukinia",120],["ciecierzyca",100],["oliwa",6]],[],280,11,40,9,"Ugotuj warzywa, zblenduj na krem i podaj z ugotowaną ciecierzycą."],
+["Kolacja","Twarożek z rzodkiewką i pieczonym batatem","vegetarian",[["twaróg",140],["jogurt naturalny",30],["batat",180],["szczypiorek",5]],["mleko"],340,30,48,4,"Upiecz batata, zjedz z chłodnym twarożkiem ze szczypiorkiem."]
 ];
 
 let recipes=raw.map((r,i)=>({
  id:i+1,type:r[0],name:r[1],diet:r[2],ingredients:r[3],tags:r[4],
- kcal:r[5],p:r[6],c:r[7],f:r[8],steps:r[9],glutenFree:true,variant:false
+ kcal:r[5],p:r[6],c:r[7],f:r[8],steps:r[9],glutenFree:true
 }));
 
-const extras=[
- ["z bazylią","bazylia",1,[]],["z koperkiem","koperek",2,[]],
- ["z natką pietruszki","natka pietruszki",2,[]],["z sokiem z cytryny","sok z cytryny",5,[]],
- ["z pestkami dyni","pestki dyni",8,[]],["z siemieniem lnianym","siemię lniane",5,[]],
- ["z oliwkami","oliwki",10,[]],["z cukinią","cukinia",20,[]],
- ["z papryką","papryka",20,[]],["z marchewką","marchew",20,[]],
- ["ze szpinakiem","szpinak",15,[]],["z sezamem","sezam",5,["sezam"]]
-];
-
-const baseRecipes=recipes.slice();
-let nextId=recipes.length+1;
-
-for(let i=0;i<baseRecipes.length*extras.length;i++){
- const b=baseRecipes[i%baseRecipes.length];
- const x=extras[Math.floor(i/baseRecipes.length)];
- const tags=[...b.tags,...x[3]].filter((v,i,a)=>a.indexOf(v)===i);
- const r={
-  ...b,id:nextId++,name:b.name+" "+x[0],
-  ingredients:b.ingredients.map(v=>[...v]).concat([[x[1],x[2]]]),
-  tags,steps:b.steps+" Opcjonalny dodatek: "+x[1]+".",variant:true
- };
- recipes.push(r);
-}
-
 const units={
-"kasza jaglana":"g","jabłko":"g","napój ryżowy":"ml","cynamon":"g",
-"płatki owsiane bezglutenowe":"g","banan":"g","jajka":"szt.","pomidor":"g",
-"ziemniaki":"g","oliwa":"ml","komosa ryżowa sucha":"g","maliny":"g",
-"szpinak":"g","ryż suchy":"g","napój kokosowy":"ml","tofu":"g","papryka":"g",
-"mąka ryżowa":"g","olej":"ml","kasza gryczana":"g","nasiona chia":"g",
-"jogurt naturalny":"g","borówki":"g","wafle ryżowe":"szt.","awokado":"g",
-"kefir":"ml","serek wiejski":"g","ogórek":"g","szczypiorek":"g",
-"gruszka":"g","truskawki":"g","hummus":"g","marchew":"g","mango":"g",
-"pomidory koktajlowe":"g","ciecierzyca":"g","papryka słodka":"g",
-"pierś kurczaka":"g","ryż":"g","brokuł":"g","pierś indyka":"g",
-"cukinia":"g","filet z dorsza":"g","fasolka szparagowa":"g",
-"mleczko kokosowe":"ml","soczewica sucha":"g","passata":"g",
-"filet z łososia":"g","fasola czerwona":"g","ser feta":"g",
-"napój migdałowy":"ml","fasola biała":"g","mleko":"ml",
-"kaszka kukurydziana":"g","masło orzechowe":"g","daktyle":"g",
-"wiórki kokosowe":"g","pestki słonecznika":"g","brzoskwinia":"g",
-"pestki dyni":"g","kakao":"g","tuńczyk":"g","sałata":"g","twaróg":"g",
-"rukola":"g","bazylia":"g","koperek":"g","natka pietruszki":"g",
-"sok z cytryny":"ml","siemię lniane":"g","oliwki":"g","sezam":"g"
+"napój ryżowy":"ml","napój kokosowy":"ml","mleko":"ml","kefir":"ml","oliwa":"ml","olej":"ml","woda":"ml","sok z cytryny":"ml",
+"jajka":"szt.","wafle ryżowe":"szt.","wafle kukurydziane":"szt."
 };
-
 const unitFor=n=>units[n]||"g";
 
 function makePerson(i){return {...peopleSeed(),name:"Osoba "+i};}
@@ -518,7 +590,7 @@ function excludedWords(){
 }
 
 function containsMeat(r){
- return r.ingredients.some(x=>/kurczak|indyk|wołow|wieprz|mięso|dorsz|łosoś|tuńczyk|ryb/i.test(x[0]))||r.tags.includes("ryby");
+ return r.ingredients.some(x=>/kurczak|indyk|wołow|schab|wieprz|kaczk|mięso|dorsz|łosoś|tuńczyk|pstrąg|makrel|ryb|krewetk/i.test(x[0]))||r.tags.includes("ryby");
 }
 
 function recipeAllowed(r){
@@ -539,52 +611,72 @@ function recipeAllowed(r){
 
 function recipesFor(type){
  let list=recipes.filter(r=>r.type===type&&recipeAllowed(r));
-
  if($("goal").value==="protein")list.sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal));
  if($("goal").value==="simple")list.sort((a,b)=>a.ingredients.length-b.ingredients.length);
-
- if($("planningMode").value==="selected"&&hasMealTarget(type)){
-  list.sort((a,b)=>macroDistance(a,type)-macroDistance(b,type));
- }
-
  return list;
 }
 
-/*
-  POPRAWIONY GENERATOR:
-  1. Najpierw używa podstawowych przepisów, a nie wariantów z dodatkami.
-  2. Nie wybiera ponownie przepisu użytego wcześniej, jeśli są inne opcje.
-  3. Losuje dania, więc nie powtarza stale tych samych dwóch pozycji.
-  4. Jeśli ustawiono cele makro, wybiera spośród najlepszych dopasowań.
-*/
-function pickRecipe(type,day,slot,used){
- const list=recipesFor(type);
- if(!list.length)return null;
+function getSlotDistribution(slotNames){
+ const len=slotNames.length;
+ if(len===3){
+  return {"Śniadanie":0.30,"Obiad":0.44,"Kolacja":0.26};
+ } else if(len===4){
+  return {"Śniadanie":0.28,"Obiad":0.42,"Podwieczorek":0.12,"Kolacja":0.18};
+ } else {
+  return {"Śniadanie":0.25,"Drugie śniadanie":0.12,"Obiad":0.38,"Podwieczorek":0.10,"Kolacja":0.15};
+ }
+}
 
- let available=list.filter(r=>!used.has(r.id));
- if(!available.length)available=list;
+function getAveragePersonTarget(){
+ const n=people.length||1;
+ return people.reduce((acc,p)=>{
+  acc.kcal+=(Number(p.kcal)||0)/n;
+  acc.p+=(Number(p.protein)||0)/n;
+  acc.c+=(Number(p.carbs)||0)/n;
+  acc.f+=(Number(p.fat)||0)/n;
+  return acc;
+ },{kcal:0,p:0,c:0,f:0});
+}
 
- // Podstawowe przepisy mają pierwszeństwo przed wariantami.
- const baseAvailable=available.filter(r=>!r.variant);
- let pool=baseAvailable.length?baseAvailable:available;
+function scaleRecipe(r, targetKcal){
+ if(!targetKcal || targetKcal<=0 || !r.kcal) return {...r};
+ const factor = targetKcal / r.kcal;
+ return {
+  ...r,
+  kcal: Math.round(r.kcal * factor),
+  p: Math.round(r.p * factor),
+  c: Math.round(r.c * factor),
+  f: Math.round(r.f * factor),
+  ingredients: r.ingredients.map(([name, amount])=>[
+   name,
+   Math.round(amount * factor * 10) / 10
+  ])
+ };
+}
 
- // Przy celach makro wybierz losowo spośród kilku najbliższych wyników.
- if($("planningMode").value==="selected"&&hasMealTarget(type)){
-  pool=[...pool].sort((a,b)=>macroDistance(a,type)-macroDistance(b,type));
-  const bestCount=Math.min(5,pool.length);
-  pool=pool.slice(0,bestCount);
- }else{
-  // Dla celów „więcej białka” i „proste posiłki” zachowaj preferencję,
-  // ale dopuść kilka dań, by plan nie był zawsze identyczny.
-  if($("goal").value==="protein"){
-   pool=[...pool].sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal)).slice(0,Math.min(7,pool.length));
-  }else if($("goal").value==="simple"){
-   pool=[...pool].sort((a,b)=>a.ingredients.length-b.ingredients.length).slice(0,Math.min(7,pool.length));
-  }
+function pickRecipeForSlot(type, targetObj, usedIds){
+ const options=recipesFor(type);
+ if(!options.length) return null;
+
+ let available=options.filter(r=>!usedIds.has(r.id));
+ if(!available.length) available=options;
+
+ if(targetObj && (targetObj.kcal || targetObj.p)){
+  available=[...available].sort((a,b)=>macroDistance(a, targetObj)-macroDistance(b, targetObj));
+  const top=available.slice(0, Math.min(4, available.length));
+  const picked=top[Math.floor(Math.random()*top.length)];
+  usedIds.add(picked.id);
+  return scaleRecipe(picked, targetObj.kcal);
  }
 
- const r=pool[Math.floor(Math.random()*pool.length)];
- used.add(r.id);
+ if($("goal").value==="protein"){
+  available=[...available].sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal)).slice(0, Math.min(6, available.length));
+ } else if($("goal").value==="simple"){
+  available=[...available].sort((a,b)=>a.ingredients.length-b.ingredients.length).slice(0, Math.min(6, available.length));
+ }
+
+ const r=available[Math.floor(Math.random()*available.length)];
+ usedIds.add(r.id);
  return r;
 }
 
@@ -630,23 +722,51 @@ function generatePlan(){
  const used=new Set();
  currentPlan=[];
  const missing=new Map();
+ const avgTarget=getAveragePersonTarget();
+ const dist=getSlotDistribution(chosen);
+ const totalTargetKcal=round(avgTarget.kcal);
 
  for(let d=0;d<days;d++){
   const dayMeals=[];
-  chosen.forEach((type,s)=>{
-   const r=pickRecipe(type,d,s,used);
-   if(r)dayMeals.push({...r,day:d+1,slot:s});
+  let accumulatedKcal=0;
+
+  chosen.forEach((type, s)=>{
+   let target=null;
+
+   if(mode==="selected"){
+    if(hasMealTarget(type)) target=mealMacroTargets[type];
+   } else {
+    let slotKcal;
+    if(s===chosen.length-1){
+     slotKcal = Math.max(150, totalTargetKcal - accumulatedKcal);
+    } else {
+     const fraction = dist[type] || (1/chosen.length);
+     slotKcal = round(totalTargetKcal * fraction);
+     accumulatedKcal += slotKcal;
+    }
+
+    const fraction = slotKcal / totalTargetKcal;
+    target={
+     kcal: slotKcal,
+     p: round(avgTarget.p * fraction),
+     c: round(avgTarget.c * fraction),
+     f: round(avgTarget.f * fraction)
+    };
+   }
+
+   const r=pickRecipeForSlot(type, target, used);
+   if(r)dayMeals.push({...r, day:d+1, slot:s, targetSlotKcal: target?target.kcal:r.kcal});
    else missing.set(type,(missing.get(type)||0)+1);
   });
-  currentPlan.push({day:d+1,meals:dayMeals});
+  currentPlan.push({day:d+1, meals:dayMeals});
  }
 
  if(missing.size){
-  $("errors").innerHTML='<div class="notice"><strong>Nie znaleziono dania dla wszystkich posiłków.</strong> Brak opcji: '+
+  $("errors").innerHTML='<div class="notice"><strong>Nie znaleziono dań dla części posiłków.</strong> Brak opcji: '+
    [...missing].map(([t,n])=>esc(t)+" ("+n+" razy)").join(", ")+
    '. Zmień filtry lub usuń część wykluczeń. Generator nie zastępuje bezpiecznej weryfikacji alergii.</div>';
  }else{
-  $("errors").innerHTML='<div class="success">Utworzono jadłospis z losowo dobranymi daniami. Lista zakupów zawiera składniki tylko z zaplanowanych posiłków. Sprawdź etykiety produktów i skład.</div>';
+  $("errors").innerHTML='<div class="success">Jadłospis został wygenerowany pomyślnie. Porcje posiłków i lista zakupów zostały automatycznie przeskalowane, pokrywając wyznaczony cel kaloryczny i makroskładniki.</div>';
  }
 
  renderGroupStats();
@@ -675,9 +795,20 @@ function fmt(n){
 }
 
 function renderPlan(){
- $("mealPlan").innerHTML=currentPlan.map(day=>`
+ $("mealPlan").innerHTML=currentPlan.map(day=>{
+  const dayKcal = day.meals.reduce((s, m)=>s + m.kcal, 0);
+  const dayP = day.meals.reduce((s, m)=>s + m.p, 0);
+  const dayC = day.meals.reduce((s, m)=>s + m.c, 0);
+  const dayF = day.meals.reduce((s, m)=>s + m.f, 0);
+
+  return `
   <div class="day">
-   <h3>Dzień ${day.day}</h3>
+   <div class="person-title" style="margin-bottom:14px">
+    <h3>Dzień ${day.day}</h3>
+    <span class="pill" style="font-size:12px;padding:6px 12px;background:#e5f7ec;color:#16794b;border:1px solid #c8ecd5">
+     Suma dnia na osobę: <strong>${dayKcal} kcal</strong> (B: ${dayP}g · W: ${dayC}g · T: ${dayF}g)
+    </span>
+   </div>
    ${day.meals.map(r=>`
     <article class="meal">
      <div class="meal-head">
@@ -688,12 +819,12 @@ function renderPlan(){
       <button type="button" class="secondary no-print" data-swap="${r.id}" data-day="${day.day}" data-slot="${r.slot}">Zamień danie</button>
      </div>
      <div class="pills">
-      <span class="pill">${r.kcal} kcal / osoba</span>
+      <span class="pill"><strong>${r.kcal} kcal</strong> / osoba</span>
       <span class="pill">B: ${r.p} g</span>
       <span class="pill">W: ${r.c} g</span>
       <span class="pill">T: ${r.f} g</span>
      </div>
-     <p class="muted">Cała grupa: ok. ${r.kcal*people.length} kcal</p>
+     <p class="muted">Dla całej grupy: ok. ${r.kcal*people.length} kcal</p>
      <strong>Składniki dla ${people.length} ${people.length===1?"osoby":"osób"}:</strong>
      <ul class="ingredient-list">
       ${r.ingredients.map(([n,a])=>`<li>${esc(n)}: ${fmt(a*people.length)} ${esc(unitFor(n))}</li>`).join("")}
@@ -702,14 +833,14 @@ function renderPlan(){
     </article>
    `).join("")}
   </div>
- `).join("");
+ `}).join("");
 
  $("mealPlan").querySelectorAll("[data-swap]").forEach(btn=>btn.addEventListener("click",()=>{
   const d=Number(btn.dataset.day),s=Number(btn.dataset.slot);
   const current=currentPlan[d-1]?.meals.find(m=>m.slot===s);
   if(!current)return;
 
-  const options=recipesFor(current.type).filter(r=>r.id!==current.id);
+  const options=recipesFor(current.type).filter(r=>r.name!==current.name);
   if(!options.length){
    alert("Brak alternatywnych dań zgodnych z aktualnymi filtrami.");
    return;
@@ -719,38 +850,21 @@ function renderPlan(){
    currentPlan.flatMap((dayPlan,dayIndex)=>
     dayPlan.meals
      .filter(meal=>!(dayIndex===d-1&&meal.slot===s))
-     .map(meal=>meal.id)
+     .map(meal=>meal.name)
    )
   );
 
-  let available=options.filter(r=>!usedElsewhere.has(r.id));
+  let available=options.filter(r=>!usedElsewhere.has(r.name));
   if(!available.length)available=options;
 
-  // Przy zamianie również preferuj podstawowe, różnorodne przepisy.
-  const baseAvailable=available.filter(r=>!r.variant);
-  let pool=baseAvailable.length?baseAvailable:available;
-
-  if($("planningMode").value==="selected"&&hasMealTarget(current.type)){
-   pool=[...pool].sort((a,b)=>macroDistance(a,current.type)-macroDistance(b,current.type));
-   pool=pool.slice(0,Math.min(5,pool.length));
-  }else if($("goal").value==="protein"){
-   pool=[...pool].sort((a,b)=>(b.p/b.kcal)-(a.p/a.kcal)).slice(0,Math.min(7,pool.length));
-  }else if($("goal").value==="simple"){
-   pool=[...pool].sort((a,b)=>a.ingredients.length-b.ingredients.length).slice(0,Math.min(7,pool.length));
-  }
-
-  let next=pool[Math.floor(Math.random()*pool.length)];
-
-  // Jeśli wylosowane danie jest takie samo jak w poprzednim dniu,
-  // spróbuj wybrać inną pozycję, o ile jest dostępna.
-  const previous=currentPlan[d-2]?.meals.find(m=>m.type===current.type);
-  if(previous&&next.name===previous.name&&pool.length>1){
-   const different=pool.filter(r=>r.name!==previous.name);
-   if(different.length)next=different[Math.floor(Math.random()*different.length)];
-  }
+  const target={kcal:current.targetSlotKcal || current.kcal, p:current.p, c:current.c, f:current.f};
+  available=[...available].sort((a,b)=>macroDistance(a,target)-macroDistance(b,target));
+  const pool=available.slice(0, Math.min(3, available.length));
+  const picked=pool[Math.floor(Math.random()*pool.length)];
+  const next=scaleRecipe(picked, target.kcal);
 
   currentPlan[d-1].meals=currentPlan[d-1].meals.map(m=>
-   m.slot===s?{...next,day:d,slot:s}:m
+   m.slot===s?{...next, day:d, slot:s, targetSlotKcal: target.kcal}:m
   );
 
   renderPlan();
